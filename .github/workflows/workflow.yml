@@ -1,0 +1,266 @@
+name: Tests
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  linter:
+    name: linter
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: Clang format
+        shell: bash
+        run: |
+          shopt -s expand_aliases
+          alias git-clang-format="git-clang-format-12"
+
+          linter_errors=$(git-clang-format --commit "HEAD~1" --diff -q || true)
+          echo "$linter_errors"
+
+          if [ ! -z "$linter_errors" ];
+          then
+            echo "Detected formatting issues; please fix"; exit 1;
+          else
+            echo "Formatting is correct"; exit 0;
+          fi
+
+  build:
+    needs: linter
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [3.9]
+        build_folder: [build]
+        cppstd: [17]
+        config:
+          - {
+              name: Windows MSVC 2019 x86 64 Debug v142,
+              os: windows-latest,
+              compiler: Visual Studio,
+              version: 16,
+              cc: cl,
+              cxx: cl,
+              arch: x86_64,
+              build_type: Debug,
+              toolset: v142,
+            }
+          - {
+              name: Windows MSVC 2019 x86 64 RelWithDebInfo v142,
+              os: windows-latest,
+              compiler: Visual Studio,
+              version: 16,
+              cc: cl,
+              cxx: cl,
+              arch: x86_64,
+              build_type: RelWithDebInfo,
+              toolset: v142,
+            }
+
+          - {
+              name: Windows MSVC 2019 x86 64 Debug ClangCL,
+              os: windows-latest,
+              compiler: Visual Studio,
+              version: 16,
+              cc: clang-cl,
+              cxx: clang-cl,
+              arch: x86_64,
+              build_type: Debug,
+              toolset: ClangCL,
+            }
+          - {
+              name: Windows MSVC 2019 x86 64 RelWithDebInfo ClangCL,
+              os: windows-latest,
+              compiler: Visual Studio,
+              version: 16,
+              cc: clang-cl,
+              cxx: clang-cl,
+              arch: x86_64,
+              build_type: RelWithDebInfo,
+              toolset: ClangCL,
+            }
+
+          - {
+              name: Windows MinGW 8.1 x86 64 Debug,
+              os: windows-latest,
+              compiler: gcc,
+              version: 8.1,
+              cc: gcc,
+              cxx: g++,
+              arch: x86_64,
+              build_type: Debug,
+            }
+          - {
+              name: Windows MinGW 8.1 x86 64 RelWithDebInfo,
+              os: windows-latest,
+              compiler: gcc,
+              version: 8.1,
+              cc: gcc,
+              cxx: g++,
+              arch: x86_64,
+              build_type: RelWithDebInfo,
+            }
+          # Linux
+          - {
+              name: Ubuntu GCC 10 x86 64 Debug,
+              os: ubuntu-latest,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: x86_64,
+              build_type: Debug,
+            }
+          - {
+              name: Ubuntu GCC 10 x86 64 RelWithDebInfo,
+              os: ubuntu-latest,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: x86_64,
+              build_type: RelWithDebInfo,
+            }
+
+          - {
+              name: Ubuntu Clang 12 x86 64 Debug,
+              os: ubuntu-latest,
+              compiler: clang,
+              version: 12.0,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: x86_64,
+              build_type: Debug,
+            }
+          - {
+              name: Ubuntu Clang 12 x86 64 RelWithDebInfo,
+              os: ubuntu-latest,
+              compiler: clang,
+              version: 12.0,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: x86_64,
+              build_type: RelWithDebInfo,
+            }
+
+          - {
+              name: Ubuntu Clang 12 ARM v8 Debug,
+              os: ubuntu-latest,
+              compiler: clang,
+              version: 12.0,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: armv8,
+              build_type: Debug,
+            }
+          - {
+              name: Ubuntu Clang 12 ARM v8 RelWithDebInfo,
+              os: ubuntu-latest,
+              compiler: clang,
+              version: 12.0,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: armv8,
+              build_type: RelWithDebInfo,
+            }
+
+          # maxOS
+          - {
+              name: macOS Apple Clang x86 64 Debug,
+              os: macos-latest,
+              compiler: apple-clang,
+              version: '12.0',
+              cc: clang,
+              cxx: clang++,
+              arch: x86_64,
+              build_type: Debug,
+            }
+          - {
+              name: macOS Apple Clang x86 64 RelWithDebInfo,
+              os: macos-latest,
+              compiler: apple-clang,
+              version: '12.0',
+              cc: clang,
+              cxx: clang++,
+              arch: x86_64,
+              build_type: RelWithDebInfo,
+            }
+
+          - {
+              name: macOS Apple Clang ARM v8 Debug,
+              os: macos-latest,
+              compiler: apple-clang,
+              version: '12.0',
+              cc: clang,
+              cxx: clang++,
+              arch: armv8,
+              build_type: Debug,
+            }
+          - {
+              name: macOS Apple Clang ARM v8 RelWithDebInfo,
+              os: macos-latest,
+              compiler: apple-clang,
+              version: '12.0',
+              cc: clang,
+              cxx: clang++,
+              arch: armv8,
+              build_type: RelWithDebInfo,
+            }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade conan
+      - name: Install dependencies
+        shell: bash
+        run: |
+          command="conan install . \
+          --install-folder ${{ matrix.build_folder }} \
+          --build=outdated \
+          -s arch=${{ matrix.config.arch }} \
+          -s build_type=${{ matrix.config.build_type }} \
+          -s compiler.cppstd=${{ matrix.cppstd }} \
+          -s compiler.version=${{ matrix.config.version }} "
+
+          if [ "${{ matrix.config.compiler }}" == "Visual Studio" ]; then
+            command+="-s compiler=\"${{ matrix.config.compiler }}\" "
+            command+="-s compiler.toolset=${{ matrix.config.toolset }} "
+          elif [ "${{ matrix.config.compiler }}" == "apple-clang" ] || [ "${{ matrix.config.compiler }}" == "clang" ]; then
+            command+="-s compiler=${{ matrix.config.compiler }} "
+            command+="-s compiler.libcxx=libc++ "
+          else
+            command+="-s compiler=${{ matrix.config.compiler }} "
+            command+="-s compiler.libcxx=libstdc++11 "
+          fi
+
+          command+="-e CC=${{ matrix.config.cc }} "
+          command+="-e CXX=${{ matrix.config.cxx }} "
+
+          export TERM=xterm
+          echo "$(tput setaf 2)${command}$(tput sgr 0)"
+
+          eval "$command"
+
+      - name: Build
+        run: conan build . --build-folder ${{ matrix.build_folder }}
+      - name: Test
+        run: ctest -C ${{ matrix.config.build_type }} --output-on-failure --repeat-until-fail 2
