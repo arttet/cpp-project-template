@@ -21,8 +21,6 @@ endif ()
 
 ############################################################################################
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-
 set(WITH_DOC OFF CACHE BOOL "Build documentations")
 set(WITH_TESTS OFF CACHE BOOL "Build test suites")
 
@@ -49,7 +47,11 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
 endif()
 
 if (MSVC)
-  add_compile_options("/WX" "/W4" "/EHsc")
+  add_compile_options(
+    "/WX"
+    "/W4"
+    "/EHsc"
+  )
 
   add_compile_definitions(_SCL_SECURE_NO_WARNINGS)
   add_compile_definitions(_SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING)
@@ -58,12 +60,51 @@ endif ()
 
 ############################################################################################
 
+find_package(absl REQUIRED)
+find_package(fmt REQUIRED)
+
+if (WITH_TESTS)
+  find_package(GTest REQUIRED)
+  find_package(benchmark REQUIRED)
+endif()
+
+############################################################################################
+
+add_subdirectory(include)
 add_subdirectory(src)
 
 if (WITH_TESTS)
   enable_testing()
-  add_subdirectory(tests)
+  add_subdirectory(test)
 endif()
+
+############################################################################################
+
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+macro(set_folders dir)
+    get_property(subdirectories
+      DIRECTORY ${dir}
+      PROPERTY SUBDIRECTORIES
+    )
+
+    foreach(subdir ${subdirectories})
+      set_folders(${targets} ${subdir})
+    endforeach()
+
+    get_property(current_target
+      DIRECTORY ${dir}
+      PROPERTY BUILDSYSTEM_TARGETS
+    )
+
+    string(REPLACE "${CMAKE_SOURCE_DIR}" "" folder ${dir})
+    set_target_properties(${current_target}
+      PROPERTIES
+        FOLDER "${folder}"
+    )
+endmacro()
+
+set_folders(${CMAKE_CURRENT_SOURCE_DIR})
 
 ############################################################################################
 
@@ -72,7 +113,7 @@ include(GNUInstallDirs)
 install(FILES LICENSE README.md DESTINATION .)
 
 if (BUILD_SHARED_LIBS)
-  foreach(RUNTIME_DESTINATION IN ITEMS tests)
+  foreach(RUNTIME_DESTINATION IN ITEMS test)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ${RUNTIME_DESTINATION})
     include(InstallRequiredSystemLibraries)
   endforeach()

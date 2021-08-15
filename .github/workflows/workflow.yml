@@ -43,9 +43,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.9]
-        build_folder: [build]
-        cppstd: [17]
+        python-version: [ 3.9 ]
+        build_folder: [ 'build' ]
+        shared: [ 'False' ]
+        cppstd: [ 17 ]
         config:
           - {
               name: Windows MSVC 2019 x86 64 Debug v142,
@@ -57,6 +58,7 @@ jobs:
               arch: x86_64,
               build_type: Debug,
               toolset: v142,
+              runtime: MTd,
             }
           - {
               name: Windows MSVC 2019 x86 64 RelWithDebInfo v142,
@@ -68,52 +70,107 @@ jobs:
               arch: x86_64,
               build_type: RelWithDebInfo,
               toolset: v142,
+              runtime: MT,
             }
 
           - {
-              name: Windows MSVC 2019 x86 64 Debug ClangCL,
+              name: Windows MSVC 2019 ARM v8 Debug v142,
               os: windows-latest,
               compiler: Visual Studio,
               version: 16,
-              cc: clang-cl,
-              cxx: clang-cl,
-              arch: x86_64,
+              cc: cl,
+              cxx: cl,
+              arch: armv8,
               build_type: Debug,
-              toolset: ClangCL,
+              toolset: v142,
+              runtime: MTd,
             }
           - {
-              name: Windows MSVC 2019 x86 64 RelWithDebInfo ClangCL,
+              name: Windows MSVC 2019 ARM v8 RelWithDebInfo v142,
               os: windows-latest,
               compiler: Visual Studio,
               version: 16,
-              cc: clang-cl,
-              cxx: clang-cl,
-              arch: x86_64,
+              cc: cl,
+              cxx: cl,
+              arch: armv8,
               build_type: RelWithDebInfo,
-              toolset: ClangCL,
+              toolset: v142,
+              runtime: MT,
+            }
+
+          # - {
+          #     name: Windows MSVC 2019 x86 64 Debug ClangCL,
+          #     os: windows-latest,
+          #     compiler: Visual Studio,
+          #     version: 16,
+          #     cc: clang-cl,
+          #     cxx: clang-cl,
+          #     arch: x86_64,
+          #     build_type: Debug,
+          #     toolset: ClangCL,
+          #     runtime: MTd,
+          #   }
+          # - {
+          #     name: Windows MSVC 2019 x86 64 RelWithDebInfo ClangCL,
+          #     os: windows-latest,
+          #     compiler: Visual Studio,
+          #     version: 16,
+          #     cc: clang-cl,
+          #     cxx: clang-cl,
+          #     arch: x86_64,
+          #     build_type: RelWithDebInfo,
+          #     toolset: ClangCL,
+          #     runtime: MT,
+          #   }
+
+          - {
+              name: Windows Clang 12 x86 64 Debug,
+              os: windows-latest,
+              compiler: clang,
+              version: 12,
+              cc: 'C:/msys64/mingw64/bin/clang',
+              cxx: 'C:/msys64/mingw64/bin/clang++',
+              arch: x86_64,
+              build_type: Debug,
+              runtime: MTd,
             }
 
           - {
-              name: Windows MinGW 8.1 x86 64 Debug,
+              name: Windows Clang 12 x86 64 RelWithDebInfo,
               os: windows-latest,
-              compiler: gcc,
-              version: 8.1,
-              cc: gcc,
-              cxx: g++,
-              arch: x86_64,
-              build_type: Debug,
-            }
-          - {
-              name: Windows MinGW 8.1 x86 64 RelWithDebInfo,
-              os: windows-latest,
-              compiler: gcc,
-              version: 8.1,
-              cc: gcc,
-              cxx: g++,
+              compiler: clang,
+              version: 12,
+              cc: 'C:/msys64/mingw64/bin/clang',
+              cxx: 'C:/msys64/mingw64/bin/clang++',
               arch: x86_64,
               build_type: RelWithDebInfo,
+              runtime: MT,
             }
-          # Linux
+
+          - {
+              name: Windows Clang 12 ARM v8 Debug,
+              os: windows-latest,
+              compiler: clang,
+              version: 12,
+              cc: 'C:/msys64/mingw64/bin/clang',
+              cxx: 'C:/msys64/mingw64/bin/clang++',
+              arch: armv8,
+              build_type: Debug,
+              runtime: MTd,
+            }
+
+          - {
+              name: Windows Clang 12 ARM v8 RelWithDebInfo,
+              os: windows-latest,
+              compiler: clang,
+              version: 12,
+              cc: 'C:/msys64/mingw64/bin/clang',
+              cxx: 'C:/msys64/mingw64/bin/clang++',
+              arch: armv8,
+              build_type: RelWithDebInfo,
+              runtime: MT,
+            }
+            # Linux
           - {
               name: Ubuntu GCC 10 x86 64 Debug,
               os: ubuntu-latest,
@@ -134,7 +191,26 @@ jobs:
               arch: x86_64,
               build_type: RelWithDebInfo,
             }
-
+          - {
+              name: Ubuntu GCC 10 ARM v8 Debug,
+              os: ubuntu-latest,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: armv8,
+              build_type: Debug,
+            }
+          - {
+              name: Ubuntu GCC 10 ARM v8 RelWithDebInfo,
+              os: ubuntu-latest,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: armv8,
+              build_type: RelWithDebInfo,
+            }
           - {
               name: Ubuntu Clang 12 x86 64 Debug,
               os: ubuntu-latest,
@@ -155,7 +231,6 @@ jobs:
               arch: x86_64,
               build_type: RelWithDebInfo,
             }
-
           - {
               name: Ubuntu Clang 12 ARM v8 Debug,
               os: ubuntu-latest,
@@ -176,8 +251,7 @@ jobs:
               arch: armv8,
               build_type: RelWithDebInfo,
             }
-
-          # maxOS
+            # maxOS
           - {
               name: macOS Apple Clang x86 64 Debug,
               os: macos-latest,
@@ -230,13 +304,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install --upgrade conan
+
       - name: Install dependencies
         shell: bash
         run: |
           command="conan install . \
           --install-folder ${{ matrix.build_folder }} \
           --build=outdated \
-          -s arch=${{ matrix.config.arch }} \
+          -s arch_target=${{ matrix.config.arch }} \
           -s build_type=${{ matrix.config.build_type }} \
           -s compiler.cppstd=${{ matrix.cppstd }} \
           -s compiler.version=${{ matrix.config.version }} "
@@ -244,12 +319,20 @@ jobs:
           if [ "${{ matrix.config.compiler }}" == "Visual Studio" ]; then
             command+="-s compiler=\"${{ matrix.config.compiler }}\" "
             command+="-s compiler.toolset=${{ matrix.config.toolset }} "
-          elif [ "${{ matrix.config.compiler }}" == "apple-clang" ] || [ "${{ matrix.config.compiler }}" == "clang" ]; then
+          elif [ "${{ matrix.config.compiler }}" == "apple-clang" ]; then
             command+="-s compiler=${{ matrix.config.compiler }} "
             command+="-s compiler.libcxx=libc++ "
           else
             command+="-s compiler=${{ matrix.config.compiler }} "
             command+="-s compiler.libcxx=libstdc++11 "
+          fi
+
+          if [[ ! -z "${{ matrix.config.runtime }}" ]]; then
+            command+="-s compiler.runtime=${{ matrix.config.runtime }} "
+          fi
+
+          if [ "${{ matrix.config.arch }}" == "x86_64" ] || [ "${{ matrix.config.arch }}" == "x86_64" ]; then
+            command+="-o with_tests=True "
           fi
 
           command+="-e CC=${{ matrix.config.cc }} "
@@ -262,5 +345,14 @@ jobs:
 
       - name: Build
         run: conan build . --build-folder ${{ matrix.build_folder }}
+
       - name: Test
-        run: ctest -C ${{ matrix.config.build_type }} --output-on-failure --repeat-until-fail 2
+        if: startsWith(matrix.config.arch, 'x86')
+        working-directory: ${{ matrix.build_folder }}
+        shell: bash
+        run: |
+          if [ "${{ matrix.config.compiler }}" == "clang" ] && [ "${{ matrix.config.os }}" == "windows-latest" ]; then
+            export PATH=C:/msys64/mingw64/bin:$PATH
+          fi
+
+          ctest -C ${{ matrix.config.build_type }} --output-on-failure
