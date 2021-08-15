@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import platform
-
-from conans import tools, ConanFile, CMake
+from conans import ConanFile, CMake
+from conans.tools import os_info, SystemPackageTool, ChocolateyTool
 
 
 class UtilsConan(ConanFile):
@@ -18,11 +17,15 @@ class UtilsConan(ConanFile):
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
+
+        "with_tests": [True, False],
     }
 
     default_options = {
         "shared": False,
         "fPIC": True,
+
+        "with_tests": False,
     }
 
     generators = "cmake", "cmake_find_package"
@@ -36,19 +39,30 @@ class UtilsConan(ConanFile):
         pass
 
     def requirements(self):
-        pass
+        self.requires("abseil/20210324.2")
+        self.requires("fmt/8.0.1")
 
     def package_id(self):
         pass
 
     def build_requirements(self):
-        pass
+        if self.options.with_tests:
+            self.build_requires("gtest/1.11.0", force_host_context=True)
+            self.build_requires("benchmark/1.5.5", force_host_context=True)
 
     def build_id(self):
         pass
 
     def system_requirements(self):
-        pass
+        packages = []
+
+        if os_info.is_windows:
+            installer = SystemPackageTool(tool=ChocolateyTool())
+        else:
+            installer = SystemPackageTool()
+
+        if packages:
+            installer.install(packages)
 
     def source(self):
         pass
@@ -58,6 +72,8 @@ class UtilsConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
+        cmake.definitions["WITH_TESTS"] = self.options.with_tests
+
         cmake.configure()
         cmake.build()
 
@@ -65,8 +81,7 @@ class UtilsConan(ConanFile):
         pass
 
     def package_info(self):
-        self.cpp_info.names["cmake_find_package"] = "cpp-project-template"
-        self.cpp_info.names["cmake_find_package_multi"] = "cpp-project-template"
+        pass
 
     def deploy(self):
         pass

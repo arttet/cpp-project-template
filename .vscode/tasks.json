@@ -1,0 +1,31 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Conan: install dependencies",
+            "type": "shell",
+            "command": "conan install -g visual_studio ${workspaceFolder} --install-folder build --build=outdated -s arch_target=x86_64 -s build_type=Debug -s compiler.cppstd=17 -s compiler.version=16 -s compiler=\"Visual Studio\" -s compiler.runtime=MTd -o with_tests=True -e CC=cl -e CXX=cl",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Conan: build",
+            "type": "shell",
+            "command": "conan build ${workspaceFolder} -bf=build",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "CPack: create a source package",
+            "type": "shell",
+            "command": "cpack -G ZIP",
+            "group": "build",
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+            "problemMatcher": []
+        }
+    ]
+}

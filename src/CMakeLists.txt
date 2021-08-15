@@ -7,4 +7,16 @@ target_sources(${PROJECT_NAME}
     main.cpp
 )
 
-install(TARGETS ${PROJECT_NAME} DESTINATION bin COMPONENT client)
+target_link_libraries(${PROJECT_NAME}
+  PRIVATE
+    absl::absl
+    fmt::fmt
+
+    cpp-project-template-interface
+)
+
+install(
+  TARGETS ${PROJECT_NAME}
+  DESTINATION bin 
+  COMPONENT client
+)
