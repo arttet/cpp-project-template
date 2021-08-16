@@ -8,13 +8,16 @@ on:
     paths-ignore:
       - '**.md'
 
+env:
+  build_folder: build
+  build_script: build.sh
+  cppstd: 17
+  python-version: 3.9
+
 jobs:
   linter:
     name: linter
-    strategy:
-      matrix:
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -25,16 +28,9 @@ jobs:
         run: |
           shopt -s expand_aliases
           alias git-clang-format="git-clang-format-12"
-
           linter_errors=$(git-clang-format --commit "HEAD~1" --diff -q || true)
           echo "$linter_errors"
-
-          if [ ! -z "$linter_errors" ];
-          then
-            echo "Detected formatting issues; please fix"; exit 1;
-          else
-            echo "Formatting is correct"; exit 0;
-          fi
+          if [ ! -z "$linter_errors" ]; then echo "Detected formatting issues; please fix"; exit 1; else echo "Formatting is correct"; exit 0; fi
 
   build:
     needs: linter
@@ -43,10 +39,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ 3.9 ]
-        build_folder: [ 'build' ]
-        shared: [ 'False' ]
-        cppstd: [ 17 ]
         config:
           - {
               name: Windows MSVC 2019 x86 64 Debug v142,
@@ -170,7 +162,7 @@ jobs:
               build_type: RelWithDebInfo,
               runtime: MT,
             }
-            # Linux
+          # Linux
           - {
               name: Ubuntu GCC 10 x86 64 Debug,
               os: ubuntu-latest,
@@ -180,6 +172,7 @@ jobs:
               cxx: g++-10,
               arch: x86_64,
               build_type: Debug,
+              coverage: True,
             }
           - {
               name: Ubuntu GCC 10 x86 64 RelWithDebInfo,
@@ -272,7 +265,6 @@ jobs:
               arch: x86_64,
               build_type: RelWithDebInfo,
             }
-
           - {
               name: macOS Apple Clang ARM v8 Debug,
               os: macos-latest,
@@ -296,10 +288,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Set up Python ${{ matrix.python-version }}
+
+      - name: Set up Python ${{ env.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{ env.python-version }}
+
       - name: Install requirements
         run: |
           python -m pip install --upgrade pip
@@ -308,47 +302,66 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
-          command="conan install . \
-          --install-folder ${{ matrix.build_folder }} \
+          install="conan install . \
+          --install-folder ${{ env.build_folder }} \
           --build=outdated \
           -s arch_target=${{ matrix.config.arch }} \
           -s build_type=${{ matrix.config.build_type }} \
-          -s compiler.cppstd=${{ matrix.cppstd }} \
+          -s compiler.cppstd=${{ env.cppstd }} \
           -s compiler.version=${{ matrix.config.version }} "
 
           if [ "${{ matrix.config.compiler }}" == "Visual Studio" ]; then
-            command+="-s compiler=\"${{ matrix.config.compiler }}\" "
-            command+="-s compiler.toolset=${{ matrix.config.toolset }} "
+            install+="-s compiler=\"${{ matrix.config.compiler }}\" "
+            install+="-s compiler.toolset=${{ matrix.config.toolset }} "
           elif [ "${{ matrix.config.compiler }}" == "apple-clang" ]; then
-            command+="-s compiler=${{ matrix.config.compiler }} "
-            command+="-s compiler.libcxx=libc++ "
+            install+="-s compiler=${{ matrix.config.compiler }} "
+            install+="-s compiler.libcxx=libc++ "
           else
-            command+="-s compiler=${{ matrix.config.compiler }} "
-            command+="-s compiler.libcxx=libstdc++11 "
+            install+="-s compiler=${{ matrix.config.compiler }} "
+            install+="-s compiler.libcxx=libstdc++11 "
           fi
 
           if [[ ! -z "${{ matrix.config.runtime }}" ]]; then
-            command+="-s compiler.runtime=${{ matrix.config.runtime }} "
+            install+="-s compiler.runtime=${{ matrix.config.runtime }} "
+          fi
+
+          if [[ ! -z "${{ matrix.config.coverage }}" ]]; then
+            install+="-o with_coverage=True "
           fi
 
           if [ "${{ matrix.config.arch }}" == "x86_64" ] || [ "${{ matrix.config.arch }}" == "x86_64" ]; then
-            command+="-o with_tests=True "
+            install+="-o with_tests=True "
           fi
 
-          command+="-e CC=${{ matrix.config.cc }} "
-          command+="-e CXX=${{ matrix.config.cxx }} "
+          install+="-e CC=${{ matrix.config.cc }} "
+          install+="-e CXX=${{ matrix.config.cxx }} "
 
           export TERM=xterm
-          echo "$(tput setaf 2)${command}$(tput sgr 0)"
 
-          eval "$command"
+          echo "#!/usr/bin/env bash" > ${{ env.build_script }}
+          echo "" >> ${{ env.build_script }}
+          echo "${install}" >> ${{ env.build_script }}
+
+          echo "$(tput setaf 2)${install}$(tput sgr 0)"
+
+          eval "$install"
 
       - name: Build
-        run: conan build . --build-folder ${{ matrix.build_folder }}
+        shell: bash
+        run: |
+          build="conan build . --build-folder ${{ env.build_folder }}"
+          echo "${build}" >> ${{ env.build_script }}
+          eval "$build"
+
+      - name: Archive the build script
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.config.name }}
+          path: ${{ env.build_script }}
 
       - name: Test
         if: startsWith(matrix.config.arch, 'x86')
-        working-directory: ${{ matrix.build_folder }}
+        working-directory: ${{ env.build_folder }}
         shell: bash
         run: |
           if [ "${{ matrix.config.compiler }}" == "clang" ] && [ "${{ matrix.config.os }}" == "windows-latest" ]; then
@@ -356,3 +369,50 @@ jobs:
           fi
 
           ctest -C ${{ matrix.config.build_type }} --output-on-failure
+
+  coverage:
+    needs: build
+    name: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ env.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.python-version }}
+
+      - name: Install requirements
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade conan
+
+      - name: Download the build script
+        uses: actions/download-artifact@v2
+        with:
+          name: 'Ubuntu GCC 10 x86 64 Debug'
+
+      - name: Build
+        run: chmod +x ${{ env.build_script }} && ./${{ env.build_script }}
+
+      - name: Test
+        run: |
+          cmake --build ${{ env.build_folder }} --target coverage
+
+      - name: Run coverage
+        run: ${{ github.workspace }}/.github/coverage.sh
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.info
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Archive code coverage results
+        uses: actions/upload-artifact@v2
+        with:
+          name: code-coverage-report
+          path: report
