@@ -21,6 +21,7 @@ endif ()
 
 ############################################################################################
 
+set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
 set(WITH_DOC OFF CACHE BOOL "Build documentations")
 set(WITH_TESTS OFF CACHE BOOL "Build test suites")
 
@@ -32,6 +33,18 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
     "-Wall"
     "-Werror"
   )
+
+  if (WITH_COVERAGE)
+    add_compile_options(
+      "-O0"
+      "-g"
+      "--coverage"
+    )
+
+    add_link_options(
+      "--coverage"
+    )
+  endif()
 
   if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     add_compile_options(
@@ -97,27 +110,32 @@ macro(set_folders dir)
       PROPERTY BUILDSYSTEM_TARGETS
     )
 
-    string(REPLACE "${CMAKE_SOURCE_DIR}" "" folder ${dir})
-    set_target_properties(${current_target}
-      PROPERTIES
-        FOLDER "${folder}"
-    )
+    if (TARGET ${current_target})
+      string(REPLACE "${CMAKE_SOURCE_DIR}" "" folder ${dir})
+      set_target_properties(${current_target}
+        PROPERTIES
+          FOLDER "${folder}"
+      )
+    endif()
 endmacro()
 
 set_folders(${CMAKE_CURRENT_SOURCE_DIR})
+
+if (WITH_COVERAGE)
+  add_custom_target(coverage
+      COMMAND $<TARGET_FILE:executable>
+      COMMAND $<TARGET_FILE:benchmark_example>
+      COMMAND ctest -C $<CONFIGURATION> --output-on-failure
+      WORKING_DIRECTORY ${CMAKE_BUILD_DIR}
+      VERBATIM
+  )
+endif()
 
 ############################################################################################
 
 include(GNUInstallDirs)
 
 install(FILES LICENSE README.md DESTINATION .)
-
-if (BUILD_SHARED_LIBS)
-  foreach(RUNTIME_DESTINATION IN ITEMS test)
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ${RUNTIME_DESTINATION})
-    include(InstallRequiredSystemLibraries)
-  endforeach()
-endif ()
 
 set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})

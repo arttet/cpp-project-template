@@ -18,6 +18,7 @@ class UtilsConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
 
+        "with_coverage": [True, False],
         "with_tests": [True, False],
     }
 
@@ -25,6 +26,7 @@ class UtilsConan(ConanFile):
         "shared": False,
         "fPIC": True,
 
+        "with_coverage": False,
         "with_tests": False,
     }
 
@@ -56,6 +58,9 @@ class UtilsConan(ConanFile):
     def system_requirements(self):
         packages = []
 
+        if self.options.with_coverage and os_info.is_linux:
+            packages.append("lcov")
+
         if os_info.is_windows:
             installer = SystemPackageTool(tool=ChocolateyTool())
         else:
@@ -72,6 +77,7 @@ class UtilsConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
+        cmake.definitions["WITH_COVERAGE"] = self.options.with_coverage
         cmake.definitions["WITH_TESTS"] = self.options.with_tests
 
         cmake.configure()
