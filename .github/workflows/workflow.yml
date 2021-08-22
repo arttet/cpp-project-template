@@ -7,42 +7,150 @@ on:
   pull_request:
     paths-ignore:
       - '**.md'
+  schedule:
+    # https://crontab.guru/
+    # At 12:00 AM, only on Monday
+    - cron: 0 0 * * 1
 
 env:
-  build_folder: build
-  build_script: build.sh
+  build-folder: build
+  build-script: build.sh
   cppstd: 17
   python-version: 3.9
 
 jobs:
-  linter:
-    name: linter
+  clang-format:
+    name: clang-format
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 1
+          fetch-depth: 2
       - name: Clang format
         shell: bash
         run: |
-          shopt -s expand_aliases
-          alias git-clang-format="git-clang-format-12"
-          linter_errors=$(git-clang-format --commit "HEAD~1" --diff -q || true)
+          linter_errors=$(git-clang-format-12 --commit "HEAD~1" --diff -q || true)
           echo "$linter_errors"
           if [ ! -z "$linter_errors" ]; then echo "Detected formatting issues; please fix"; exit 1; else echo "Formatting is correct"; exit 0; fi
 
-  build:
-    needs: linter
-    name: ${{ matrix.config.name }}
-    runs-on: ${{ matrix.config.os }}
+  generate:
+    name: Generate ${{ matrix.config.name }}
+    runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
       matrix:
         config:
+          # Specific config
           - {
-              name: Windows MSVC 2019 x86 64 Debug v142,
-              os: windows-latest,
+              name: Linters Clang 12 x86 64,
+              compiler: clang,
+              version: 12,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: x86_64,
+              build_type: Debug,
+              clang-tidy: clang-tidy-12,
+              iwyu: '/usr/local/bin/include-what-you-use',
+              lwyu: 'True'
+            }
+
+          - {
+              name: Address Sanitizer GCC 10 x86 64,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              sanitize: address,
+            }
+          - {
+              name: Address Sanitizer Clang 12 x86 64,
+              compiler: clang,
+              version: 12,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              sanitize: address,
+            }
+
+          - {
+              name: Thread Sanitizer GCC 10 x86 64,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              sanitize: thread,
+            }
+          - {
+              name: Thread Sanitizer Clang 12 x86 64,
+              compiler: clang,
+              version: 12,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              sanitize: thread,
+            }
+
+          - {
+              name: Undefined Behavior Sanitizer GCC 10 x86 64,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              sanitize: undefined,
+            }
+          - {
+              name: Undefined Behavior Sanitizer Clang 12 x86 64,
+              compiler: clang,
+              version: 12,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              sanitize: undefined,
+            }
+
+          - {
+              name: Coverage GCC 10 x86 64,
+              compiler: gcc,
+              version: 10.3,
+              cc: gcc-10,
+              cxx: g++-10,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              coverage: True,
+            }
+          - {
+              # FIXME: DOES NOT WORK
+              name: Coverage Clang 12 x86 64,
+              compiler: clang,
+              version: 12,
+              cc: clang-12,
+              cxx: clang++-12,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              coverage: True,
+            }
+
+          # Windows
+          - {
+              # FIXME: Update Conan settings.yml
+              name: Windows MSVC 19.29 x86 64 Debug,
               compiler: Visual Studio,
               version: 16,
               cc: cl,
@@ -51,10 +159,11 @@ jobs:
               build_type: Debug,
               toolset: v142,
               runtime: MTd,
+              test: True,
             }
           - {
-              name: Windows MSVC 2019 x86 64 RelWithDebInfo v142,
-              os: windows-latest,
+              # FIXME: Update Conan settings.yml
+              name: Windows MSVC 19.29 x86 64 RelWithDebInfo,
               compiler: Visual Studio,
               version: 16,
               cc: cl,
@@ -63,11 +172,12 @@ jobs:
               build_type: RelWithDebInfo,
               toolset: v142,
               runtime: MT,
+              test: True,
             }
 
           - {
-              name: Windows MSVC 2019 ARM v8 Debug v142,
-              os: windows-latest,
+              # FIXME: Update Conan settings.yml
+              name: Windows MSVC 19.29 ARM v8 Debug,
               compiler: Visual Studio,
               version: 16,
               cc: cl,
@@ -78,8 +188,8 @@ jobs:
               runtime: MTd,
             }
           - {
-              name: Windows MSVC 2019 ARM v8 RelWithDebInfo v142,
-              os: windows-latest,
+              # FIXME: Update Conan settings.yml
+              name: Windows MSVC 19.29 ARM v8 RelWithDebInfo,
               compiler: Visual Studio,
               version: 16,
               cc: cl,
@@ -90,103 +200,106 @@ jobs:
               runtime: MT,
             }
 
-          # - {
-          #     name: Windows MSVC 2019 x86 64 Debug ClangCL,
-          #     os: windows-latest,
-          #     compiler: Visual Studio,
-          #     version: 16,
-          #     cc: clang-cl,
-          #     cxx: clang-cl,
-          #     arch: x86_64,
-          #     build_type: Debug,
-          #     toolset: ClangCL,
-          #     runtime: MTd,
-          #   }
-          # - {
-          #     name: Windows MSVC 2019 x86 64 RelWithDebInfo ClangCL,
-          #     os: windows-latest,
-          #     compiler: Visual Studio,
-          #     version: 16,
-          #     cc: clang-cl,
-          #     cxx: clang-cl,
-          #     arch: x86_64,
-          #     build_type: RelWithDebInfo,
-          #     toolset: ClangCL,
-          #     runtime: MT,
-          #   }
+          - {
+              name: Windows MSVC 2019 x86 64 Debug ClangCL,
+              compiler: Visual Studio,
+              version: 16,
+              cc: clang-cl,
+              cxx: clang-cl,
+              arch: x86_64,
+              build_type: Debug,
+              toolset: ClangCL,
+              runtime: MTd,
+              test: True,
+            }
+          - {
+              name: Windows MSVC 2019 x86 64 RelWithDebInfo ClangCL,
+              compiler: Visual Studio,
+              version: 16,
+              cc: clang-cl,
+              cxx: clang-cl,
+              arch: x86_64,
+              build_type: RelWithDebInfo,
+              toolset: ClangCL,
+              runtime: MT,
+              test: True,
+            }
 
           - {
               name: Windows Clang 12 x86 64 Debug,
-              os: windows-latest,
               compiler: clang,
               version: 12,
-              cc: 'C:/msys64/mingw64/bin/clang',
-              cxx: 'C:/msys64/mingw64/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
               arch: x86_64,
               build_type: Debug,
-              runtime: MTd,
+              runtime: MDd,
+              test: True,
+              # FIXME:
+              cxxflags: '-Wno-unused-command-line-argument -Wno-microsoft-enum-value',
             }
-
           - {
               name: Windows Clang 12 x86 64 RelWithDebInfo,
-              os: windows-latest,
               compiler: clang,
               version: 12,
-              cc: 'C:/msys64/mingw64/bin/clang',
-              cxx: 'C:/msys64/mingw64/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
               arch: x86_64,
               build_type: RelWithDebInfo,
-              runtime: MT,
+              runtime: MD,
+              test: True,
+              # FIXME:
+              cxxflags: '-Wno-unused-command-line-argument -Wno-microsoft-enum-value',
             }
 
           - {
               name: Windows Clang 12 ARM v8 Debug,
-              os: windows-latest,
               compiler: clang,
               version: 12,
-              cc: 'C:/msys64/mingw64/bin/clang',
-              cxx: 'C:/msys64/mingw64/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
               arch: armv8,
               build_type: Debug,
-              runtime: MTd,
+              runtime: MDd,
+              # FIXME:
+              cxxflags: '-Wno-unused-command-line-argument',
             }
-
           - {
               name: Windows Clang 12 ARM v8 RelWithDebInfo,
-              os: windows-latest,
               compiler: clang,
               version: 12,
-              cc: 'C:/msys64/mingw64/bin/clang',
-              cxx: 'C:/msys64/mingw64/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
               arch: armv8,
               build_type: RelWithDebInfo,
-              runtime: MT,
+              runtime: MD,
+              # FIXME:
+              cxxflags: '-Wno-unused-command-line-argument',
             }
           # Linux
           - {
               name: Ubuntu GCC 10 x86 64 Debug,
-              os: ubuntu-latest,
               compiler: gcc,
               version: 10.3,
               cc: gcc-10,
               cxx: g++-10,
               arch: x86_64,
               build_type: Debug,
-              coverage: True,
+              test: True,
             }
           - {
               name: Ubuntu GCC 10 x86 64 RelWithDebInfo,
-              os: ubuntu-latest,
               compiler: gcc,
               version: 10.3,
               cc: gcc-10,
               cxx: g++-10,
               arch: x86_64,
               build_type: RelWithDebInfo,
+              test: True,
             }
+
           - {
               name: Ubuntu GCC 10 ARM v8 Debug,
-              os: ubuntu-latest,
               compiler: gcc,
               version: 10.3,
               cc: gcc-10,
@@ -196,7 +309,6 @@ jobs:
             }
           - {
               name: Ubuntu GCC 10 ARM v8 RelWithDebInfo,
-              os: ubuntu-latest,
               compiler: gcc,
               version: 10.3,
               cc: gcc-10,
@@ -204,29 +316,30 @@ jobs:
               arch: armv8,
               build_type: RelWithDebInfo,
             }
+
           - {
               name: Ubuntu Clang 12 x86 64 Debug,
-              os: ubuntu-latest,
               compiler: clang,
               version: 12.0,
               cc: clang-12,
               cxx: clang++-12,
               arch: x86_64,
               build_type: Debug,
+              test: True,
             }
           - {
               name: Ubuntu Clang 12 x86 64 RelWithDebInfo,
-              os: ubuntu-latest,
               compiler: clang,
               version: 12.0,
               cc: clang-12,
               cxx: clang++-12,
               arch: x86_64,
               build_type: RelWithDebInfo,
+              test: True,
             }
+
           - {
               name: Ubuntu Clang 12 ARM v8 Debug,
-              os: ubuntu-latest,
               compiler: clang,
               version: 12.0,
               cc: clang-12,
@@ -236,7 +349,6 @@ jobs:
             }
           - {
               name: Ubuntu Clang 12 ARM v8 RelWithDebInfo,
-              os: ubuntu-latest,
               compiler: clang,
               version: 12.0,
               cc: clang-12,
@@ -244,30 +356,30 @@ jobs:
               arch: armv8,
               build_type: RelWithDebInfo,
             }
-            # maxOS
+          # maxOS
           - {
-              name: macOS Apple Clang x86 64 Debug,
-              os: macos-latest,
+              name: OS X Apple Clang x86 64 Debug,
               compiler: apple-clang,
               version: '12.0',
               cc: clang,
               cxx: clang++,
               arch: x86_64,
               build_type: Debug,
+              test: True,
             }
           - {
-              name: macOS Apple Clang x86 64 RelWithDebInfo,
-              os: macos-latest,
+              name: OS X Apple Clang x86 64 RelWithDebInfo,
               compiler: apple-clang,
               version: '12.0',
               cc: clang,
               cxx: clang++,
               arch: x86_64,
               build_type: RelWithDebInfo,
+              test: True,
             }
+
           - {
-              name: macOS Apple Clang ARM v8 Debug,
-              os: macos-latest,
+              name: OS X Apple Clang ARM v8 Debug,
               compiler: apple-clang,
               version: '12.0',
               cc: clang,
@@ -276,8 +388,7 @@ jobs:
               build_type: Debug,
             }
           - {
-              name: macOS Apple Clang ARM v8 RelWithDebInfo,
-              os: macos-latest,
+              name: OS X Apple Clang ARM v8 RelWithDebInfo,
               compiler: apple-clang,
               version: '12.0',
               cc: clang,
@@ -286,25 +397,13 @@ jobs:
               build_type: RelWithDebInfo,
             }
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Set up Python ${{ env.python-version }}
-        uses: actions/setup-python@v2
-        with:
-          python-version: ${{ env.python-version }}
-
-      - name: Install requirements
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade conan
-
-      - name: Install dependencies
+      - name: Generate the build script
         shell: bash
         run: |
           install="conan install . \
-          --install-folder ${{ env.build_folder }} \
-          --build=outdated \
+          -g cmake \
+          -if ${{ env.build-folder }} \
+          -b outdated \
           -s arch_target=${{ matrix.config.arch }} \
           -s build_type=${{ matrix.config.build_type }} \
           -s compiler.cppstd=${{ env.cppstd }} \
@@ -312,68 +411,100 @@ jobs:
 
           if [ "${{ matrix.config.compiler }}" == "Visual Studio" ]; then
             install+="-s compiler=\"${{ matrix.config.compiler }}\" "
-            install+="-s compiler.toolset=${{ matrix.config.toolset }} "
-          elif [ "${{ matrix.config.compiler }}" == "apple-clang" ]; then
-            install+="-s compiler=${{ matrix.config.compiler }} "
-            install+="-s compiler.libcxx=libc++ "
           else
             install+="-s compiler=${{ matrix.config.compiler }} "
+          fi
+
+          if [ "${{ matrix.config.compiler }}" == "apple-clang" ]; then
+            install+="-s compiler.libcxx=libc++ "
+          elif [ "${{ matrix.config.compiler }}" == "clang" ]; then
             install+="-s compiler.libcxx=libstdc++11 "
+          elif [ "${{ matrix.config.compiler }}" == "gcc" ]; then
+            install+="-s compiler.libcxx=libstdc++11 "
+          fi
+
+          if [[ ! -z "${{ matrix.config.toolset }}" ]]; then
+            install+="-s compiler.toolset=${{ matrix.config.toolset }} "
           fi
 
           if [[ ! -z "${{ matrix.config.runtime }}" ]]; then
             install+="-s compiler.runtime=${{ matrix.config.runtime }} "
           fi
 
+          if [[ ! -z "${{ matrix.config.runtime_type }}" ]]; then
+            install+="-s compiler.runtime_type=${{ matrix.config.runtime_type }} "
+          fi
+
+          if [[ ! -z "${{ matrix.config.cc }}" ]]; then
+            install+="-e CC=\"${{ matrix.config.cc }}\" "
+          fi
+
+          if [[ ! -z "${{ matrix.config.cxx }}" ]]; then
+            install+="-e CXX=\"${{ matrix.config.cxx }}\" "
+          fi
+
+          if [[ ! -z "${{ matrix.config.cxxflags }}" ]]; then
+            install+="-e CFLAGS=\"${{ matrix.config.cxxflags }}\" "
+            install+="-e CXXFLAGS=\"${{ matrix.config.cxxflags }}\" "
+          elif [[ ! -z "${{ matrix.config.sanitize }}" ]]; then
+            install+="-e CFLAGS=-fsanitize=${{ matrix.config.sanitize }} "
+            install+="-e CXXFLAGS=-fsanitize=${{ matrix.config.sanitize }} "
+          fi
+
           if [[ ! -z "${{ matrix.config.coverage }}" ]]; then
             install+="-o with_coverage=True "
           fi
 
-          if [ "${{ matrix.config.arch }}" == "x86_64" ] || [ "${{ matrix.config.arch }}" == "x86_64" ]; then
+          if [[ ! -z "${{ matrix.config.test }}" ]]; then
             install+="-o with_tests=True "
           fi
 
-          install+="-e CC=${{ matrix.config.cc }} "
-          install+="-e CXX=${{ matrix.config.cxx }} "
+          if [[ ! -z "${{ matrix.config.clang-tidy }}" ]]; then
+            install+="-o with_clang_tidy=${{ matrix.config.clang-tidy }} "
+          fi
+
+          if [[ ! -z "${{ matrix.config.iwyu }}" ]]; then
+            install+="-o with_iwyu=${{ matrix.config.iwyu }} "
+          fi
+
+          if [[ ! -z "${{ matrix.config.lwyu }}" ]]; then
+            install+="-o with_lwyu=${{ matrix.config.lwyu }} "
+          fi
+
+          build="# conan build . -bf ${{ env.build-folder }}"
+
+          echo "#!/usr/bin/env bash" > ${{ env.build-script }}
+          echo "" >> ${{ env.build-script }}
+          echo "${install}" >> ${{ env.build-script }}
+          echo "${build}" >> ${{ env.build-script }}
 
           export TERM=xterm
-
-          echo "#!/usr/bin/env bash" > ${{ env.build_script }}
-          echo "" >> ${{ env.build_script }}
-          echo "${install}" >> ${{ env.build_script }}
-
           echo "$(tput setaf 2)${install}$(tput sgr 0)"
-
-          eval "$install"
-
-      - name: Build
-        shell: bash
-        run: |
-          build="conan build . --build-folder ${{ env.build_folder }}"
-          echo "${build}" >> ${{ env.build_script }}
-          eval "$build"
+          echo "$(tput setaf 2)${build}$(tput sgr 0)"
 
       - name: Archive the build script
         uses: actions/upload-artifact@v2
         with:
           name: ${{ matrix.config.name }}
-          path: ${{ env.build_script }}
+          path: ${{ env.build-script }}
 
-      - name: Test
-        if: startsWith(matrix.config.arch, 'x86')
-        working-directory: ${{ env.build_folder }}
-        shell: bash
-        run: |
-          if [ "${{ matrix.config.compiler }}" == "clang" ] && [ "${{ matrix.config.os }}" == "windows-latest" ]; then
-            export PATH=C:/msys64/mingw64/bin:$PATH
-          fi
-
-          ctest -C ${{ matrix.config.build_type }} --output-on-failure
-
-  coverage:
-    needs: build
-    name: coverage
-    runs-on: ubuntu-latest
+  linters:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    needs: [clang-format, generate]
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { name: Windows MSVC 2019 x86 64 Debug ClangCL, os: windows-latest, build_type: Debug }
+          - { name: Windows Clang 12 x86 64 Debug, os: windows-latest, build_type: Debug }
+          - { name: Linters Clang 12 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: Address Sanitizer GCC 10 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: Address Sanitizer Clang 12 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: Thread Sanitizer GCC 10 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: Thread Sanitizer Clang 12 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: Undefined Behavior Sanitizer GCC 10 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: Undefined Behavior Sanitizer Clang 12 x86 64, os: ubuntu-latest, build_type: Debug }
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -384,35 +515,140 @@ jobs:
           python-version: ${{ env.python-version }}
 
       - name: Install requirements
+        shell: bash
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install --upgrade conan
+          python -m pip install --upgrade pip conan
+          if [[ "${{ matrix.config.name }}" == "Linters"* ]]; then
+            sudo ./.github/include-what-you-use.sh
+          fi
 
       - name: Download the build script
         uses: actions/download-artifact@v2
         with:
-          name: 'Ubuntu GCC 10 x86 64 Debug'
+          name: ${{ matrix.config.name }}
+
+      - name: Install dependencies
+        shell: bash
+        run: chmod +x ${{ env.build-script }} && ./${{ env.build-script }}
 
       - name: Build
-        run: chmod +x ${{ env.build_script }} && ./${{ env.build_script }}
+        shell: bash
+        run: conan build . -bf ${{ env.build-folder }}
 
       - name: Test
-        run: |
-          cmake --build ${{ env.build_folder }} --target coverage
+        run: ctest -C ${{ matrix.config.build_type }} -R "system|test" --output-on-failure --repeat-until-fail 5 --test-dir ${{ env.build-folder }} --output-junit report.xml
 
-      - name: Run coverage
+  build:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    needs: [clang-format, generate]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
+    strategy:
+      matrix:
+        config:
+          # Windows
+          # - { name: Windows MSVC 19.29 x86 64 Debug, os: windows-latest, runtime_type: Debug }
+          # - { name: Windows MSVC 19.29 x86 64 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
+          # - { name: Windows MSVC 19.29 ARM v8 Debug, os: windows-latest, build_type: Debug }
+          # - { name: Windows MSVC 19.29 ARM v8 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
+          - { name: Windows MSVC 2019 x86 64 Debug ClangCL, os: windows-latest, build_type: Debug }
+          - { name: Windows MSVC 2019 x86 64 RelWithDebInfo ClangCL, os: windows-latest, build_type: RelWithDebInfo }
+          - { name: Windows Clang 12 x86 64 Debug, os: windows-latest, build_type: Debug }
+          - { name: Windows Clang 12 x86 64 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
+          - { name: Windows Clang 12 ARM v8 Debug, os: windows-latest, build_type: Debug }
+          - { name: Windows Clang 12 ARM v8 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
+          # Linux
+          - { name: Ubuntu GCC 10 x86 64 Debug, os: ubuntu-latest, build_type: Debug }
+          - { name: Ubuntu GCC 10 x86 64 RelWithDebInfo, os: ubuntu-latest, build_type: RelWithDebInfo }
+          - { name: Ubuntu GCC 10 ARM v8 Debug, os: ubuntu-latest, build_type: Debug }
+          - { name: Ubuntu GCC 10 ARM v8 RelWithDebInfo, os: ubuntu-latest, build_type: RelWithDebInfo }
+          - { name: Ubuntu Clang 12 x86 64 Debug, os: ubuntu-latest, build_type: Debug }
+          - { name: Ubuntu Clang 12 x86 64 RelWithDebInfo, os: ubuntu-latest, build_type: RelWithDebInfo }
+          - { name: Ubuntu Clang 12 ARM v8 Debug, os: ubuntu-latest, build_type: Debug }
+          - { name: Ubuntu Clang 12 ARM v8 RelWithDebInfo, os: ubuntu-latest, build_type: RelWithDebInfo }
+          # maxOS
+          - { name: OS X Apple Clang x86 64 Debug, os: macos-latest, build_type: Debug }
+          - { name: OS X Apple Clang x86 64 RelWithDebInfo, os: macos-latest, build_type: RelWithDebInfo }
+          - { name: OS X Apple Clang ARM v8 Debug, os: macos-latest, build_type: Debug }
+          - { name: OS X Apple Clang ARM v8 RelWithDebInfo, os: macos-latest, build_type: RelWithDebInfo }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ env.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.python-version }}
+
+      - name: Install requirements
+        run: python -m pip install --upgrade pip conan
+
+      - name: Download the build script
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ matrix.config.name }}
+
+      - name: Install dependencies
+        shell: bash
+        run: chmod +x ${{ env.build-script }} && ./${{ env.build-script }}
+
+      - name: Build
+        run: conan build . -bf ${{ env.build-folder }}
+
+      - name: Test
+        # if: contains(matrix.config.name, 'x86')
+        run: ctest -C ${{ matrix.config.build_type }} --output-on-failure --repeat-until-fail 1 --test-dir ${{ env.build-folder }} --output-junit report.xml
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    needs: linters
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ env.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.python-version }}
+
+      - name: Install requirements
+        run: python -m pip install --upgrade pip conan
+
+      - name: Download the build script
+        uses: actions/download-artifact@v2
+        with:
+          name: Coverage GCC 10 x86 64
+
+      - name: Install dependencies
+        shell: bash
+        run: chmod +x ${{ env.build-script }} && ./${{ env.build-script }}
+
+      - name: Build
+        run: conan build . -bf ${{ env.build-folder }}
+
+      - name: Test
+        run: ctest -C Debug --output-on-failure --repeat-until-fail 1 --test-dir ${{ env.build-folder }} --output-junit report.xml
+
+      - name: Coverage
         run: ${{ github.workspace }}/.github/coverage.sh
 
-      - name: Upload coverage to Codecov
+      - name: Publish Coverage Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: report
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        with:
+          files: ${{ env.build-folder }}/*.xml
+
+      - name: Publish Coverage Results to Codecov
         uses: codecov/codecov-action@v1
+        if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.info
           flags: unittests
           name: codecov-umbrella
-
-      - name: Archive code coverage results
-        uses: actions/upload-artifact@v2
-        with:
-          name: code-coverage-report
-          path: report
