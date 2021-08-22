@@ -18,6 +18,12 @@ class UtilsConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
 
+        "with_clang_tidy": "ANY",
+        "with_cppcheck": "ANY",
+        "with_cpplint": "ANY",
+        "with_iwyu": "ANY",
+        "with_lwyu": [True, False],
+
         "with_coverage": [True, False],
         "with_tests": [True, False],
     }
@@ -25,6 +31,12 @@ class UtilsConan(ConanFile):
     default_options = {
         "shared": False,
         "fPIC": True,
+
+        "with_clang_tidy": "",
+        "with_cppcheck": "",
+        "with_cpplint": "",
+        "with_iwyu": "",
+        "with_lwyu": False,
 
         "with_coverage": False,
         "with_tests": False,
@@ -41,22 +53,25 @@ class UtilsConan(ConanFile):
         pass
 
     def requirements(self):
-        self.requires("abseil/20210324.2")
         self.requires("fmt/8.0.1")
+        self.requires("ms-gsl/3.1.0")
 
     def package_id(self):
         pass
 
     def build_requirements(self):
         if self.options.with_tests:
+            self.build_requires("benchmark/1.5.6", force_host_context=True)
             self.build_requires("gtest/1.11.0", force_host_context=True)
-            self.build_requires("benchmark/1.5.5", force_host_context=True)
 
     def build_id(self):
         pass
 
     def system_requirements(self):
         packages = []
+
+        if self.options.with_clang_tidy != "" and os_info.is_linux:
+            packages.append(self.options.with_clang_tidy)
 
         if self.options.with_coverage and os_info.is_linux:
             packages.append("lcov")
@@ -77,6 +92,14 @@ class UtilsConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
+        # cmake.verbose = True
+
+        cmake.definitions["CMAKE_CXX_CLANG_TIDY"] = self.options.with_clang_tidy
+        cmake.definitions["CMAKE_CXX_CPPCHECK"] = self.options.with_cppcheck
+        cmake.definitions["CMAKE_CXX_CPPLINT"] = self.options.with_cpplint
+        cmake.definitions["CMAKE_CXX_INCLUDE_WHAT_YOU_USE"] = self.options.with_iwyu
+        cmake.definitions["CMAKE_LINK_WHAT_YOU_USE"] = self.options.with_lwyu
+
         cmake.definitions["WITH_COVERAGE"] = self.options.with_coverage
         cmake.definitions["WITH_TESTS"] = self.options.with_tests
 

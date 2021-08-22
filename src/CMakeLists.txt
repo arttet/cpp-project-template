@@ -9,14 +9,17 @@ target_sources(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME}
   PRIVATE
-    absl::absl
     fmt::fmt
+    Microsoft.GSL::GSL
+)
 
-    cpp-project-template-interface
+add_test(
+  NAME system_${PROJECT_NAME}
+  COMMAND ${PROJECT_NAME}
 )
 
 install(
   TARGETS ${PROJECT_NAME}
-  DESTINATION bin 
+  DESTINATION bin
   COMPONENT client
 )

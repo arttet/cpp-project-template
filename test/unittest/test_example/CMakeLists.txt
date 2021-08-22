@@ -13,5 +13,13 @@ target_link_libraries(${PROJECT_NAME}
     GTest::gtest_main
 )
 
-add_test(NAME ${PROJECT_NAME} COMMAND ${PROJECT_NAME})
-install(TARGETS ${PROJECT_NAME} DESTINATION test COMPONENT test)
+add_test(
+  NAME ${PROJECT_NAME}
+  COMMAND ${PROJECT_NAME}
+)
+
+install(
+  TARGETS ${PROJECT_NAME}
+  DESTINATION test
+  COMPONENT test
+)
