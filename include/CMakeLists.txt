@@ -1,6 +1,7 @@
-project(cpp-project-template-interface)
+project(include)
 
 add_library(${PROJECT_NAME} INTERFACE)
+add_library(${CMAKE_PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
   PRIVATE
@@ -14,7 +15,21 @@ target_include_directories(${PROJECT_NAME}
 )
 
 install(
-  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/
+  DIRECTORY ${CMAKE_PROJECT_NAME}
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-  FILES_MATCHING PATTERN "*.h"
+  COMPONENT Development
+)
+
+install(
+  TARGETS ${PROJECT_NAME}
+  EXPORT ${PROJECT_NAME}-target
+  COMPONENT Development
+)
+
+install(
+  EXPORT ${PROJECT_NAME}-target
+  FILE ${PROJECT_NAME}-target.cmake
+  NAMESPACE ${CMAKE_PROJECT_NAME}::
+  DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/${CMAKE_PROJECT_NAME}/cmake
+  COMPONENT Development
 )
