@@ -92,6 +92,9 @@ class UtilsConan(ConanFile):
 
     def build(self):
         cmake = CMake(self)
+
+        # https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference?view=vs-2019
+        # cmake.msbuild_verbosity = "normal"
         # cmake.verbose = True
 
         cmake.definitions["CMAKE_CXX_CLANG_TIDY"] = self.options.with_clang_tidy

@@ -11,6 +11,8 @@ target_link_libraries(${PROJECT_NAME}
   PRIVATE
     fmt::fmt
     Microsoft.GSL::GSL
+
+   cpp-project-template::include
 )
 
 add_test(
@@ -20,6 +22,6 @@ add_test(
 
 install(
   TARGETS ${PROJECT_NAME}
-  DESTINATION bin
-  COMPONENT client
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT Runtime
 )

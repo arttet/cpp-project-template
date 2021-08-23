@@ -6,7 +6,7 @@
 int main(int argc, char ** argv) // NOLINT
 {
     auto const args = gsl::span(argv, size_t(argc));
-    fmt::print("args = {}", fmt::join(args, ", "));
+    fmt::print(u8"Hello, 世界: args = {}", fmt::join(args, ", "));
 
     return EXIT_SUCCESS;
 }

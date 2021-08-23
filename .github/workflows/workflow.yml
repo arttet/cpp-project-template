@@ -51,7 +51,7 @@ jobs:
               build_type: Debug,
               clang-tidy: clang-tidy-12,
               iwyu: '/usr/local/bin/include-what-you-use',
-              lwyu: 'True'
+              lwyu: 'True',
             }
 
           - {
@@ -547,10 +547,10 @@ jobs:
       matrix:
         config:
           # Windows
-          # - { name: Windows MSVC 19.29 x86 64 Debug, os: windows-latest, runtime_type: Debug }
-          # - { name: Windows MSVC 19.29 x86 64 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
-          # - { name: Windows MSVC 19.29 ARM v8 Debug, os: windows-latest, build_type: Debug }
-          # - { name: Windows MSVC 19.29 ARM v8 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
+          - { name: Windows MSVC 19.29 x86 64 Debug, os: windows-latest, build_type: Debug }
+          - { name: Windows MSVC 19.29 x86 64 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
+          - { name: Windows MSVC 19.29 ARM v8 Debug, os: windows-latest, build_type: Debug }
+          - { name: Windows MSVC 19.29 ARM v8 RelWithDebInfo, os: windows-latest, build_type: RelWithDebInfo }
           - { name: Windows MSVC 2019 x86 64 Debug ClangCL, os: windows-latest, build_type: Debug }
           - { name: Windows MSVC 2019 x86 64 RelWithDebInfo ClangCL, os: windows-latest, build_type: RelWithDebInfo }
           - { name: Windows Clang 12 x86 64 Debug, os: windows-latest, build_type: Debug }

@@ -4,31 +4,41 @@ project(cpp-project-template VERSION 0.0.1 LANGUAGES CXX)
 
 ############################################################################################
 
-set(CMAKE_CXX_STANDARD 17)
-set(CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-set(CMAKE_INCLUDE_HEADERS_IN_COMPILE_COMMANDS ON)
-
-############################################################################################
-
 if (EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
-  include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+  include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
   conan_basic_setup()
 endif ()
 
 ############################################################################################
 
-set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
-set(WITH_DOC OFF CACHE BOOL "Build documentations")
-set(WITH_TESTS OFF CACHE BOOL "Build test suites")
+# Set required C++ Standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Generate the compile_commands.json file
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_INCLUDE_HEADERS_IN_COMPILE_COMMANDS ON)
+
+# Set the Relative Path Configurations
+set(CMAKE_SKIP_BUILD_RPATH OFF)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+
+# Configure the visibility of symbols in targets
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+
+if (NOT DEFINED CMAKE_DEBUG_POSTFIX)
+  set(CMAKE_DEBUG_POSTFIX "d")
+endif()
 
 include(CMakePrintHelpers)
-cmake_print_variables(WITH_COVERAGE)
-cmake_print_variables(WITH_DOC)
-cmake_print_variables(WITH_TESTS)
+
+# Build types
+cmake_print_variables(CMAKE_CONFIGURATION_TYPES)
+cmake_print_variables(CMAKE_BUILD_TYPE)
+cmake_print_variables(BUILD_SHARED_LIBS)
 
 # Linters
 cmake_print_variables(CMAKE_CXX_CLANG_TIDY)
@@ -42,7 +52,18 @@ cmake_print_variables(CMAKE_VERBOSE_MAKEFILE)
 
 ############################################################################################
 
+set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
+set(WITH_DOC OFF CACHE BOOL "Build documentations")
+set(WITH_TESTS OFF CACHE BOOL "Build test suites")
+
+cmake_print_variables(WITH_COVERAGE)
+cmake_print_variables(WITH_DOC)
+cmake_print_variables(WITH_TESTS)
+
+############################################################################################
+
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+  # https://clang.llvm.org/docs/ClangCommandLineReference.html
   add_compile_options(
     "-Wall"
     "-Wextra"
@@ -62,12 +83,14 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     )
   endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  # https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html
   add_compile_options(
-    "-Wextra"
     "-Wall"
+    "-Wextra"
     "-Werror"
   )
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  # https://docs.microsoft.com/en-us/cpp/build/reference/compiler-options?view=msvc-160
   add_compile_definitions(
     UNICODE
     _UNICODE
@@ -78,9 +101,15 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   )
 
   add_compile_options(
-    "/WX"
     "/W4"
-    "/EHsc"
+    "/WX"
+
+    "/utf-8"
+
+    # Enable parallel compilation (https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=msvc-160)
+    "/MP"
+    # Flag for catch the null pointer exception (https://docs.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-160)
+    "/EHa"
   )
 endif()
 
@@ -126,6 +155,7 @@ endif()
 ############################################################################################
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 
 macro(set_folders dir)
     get_property(subdirectories
@@ -146,7 +176,10 @@ macro(set_folders dir)
       string(REPLACE "${CMAKE_SOURCE_DIR}" "" folder ${dir})
       set_target_properties(${current_target}
         PROPERTIES
-          FOLDER "${folder}"
+          FOLDER
+            "${folder}"
+          DEBUG_POSTFIX
+            ${CMAKE_DEBUG_POSTFIX}
       )
     endif()
 endmacro()
@@ -157,7 +190,13 @@ set_folders(${CMAKE_CURRENT_SOURCE_DIR})
 
 install(FILES LICENSE DESTINATION licenses)
 
-set(CPACK_PACKAGE_VENDOR "")
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+include(GNUInstallDirs)
+include(CMakePackageConfigHelpers)
+include(InstallRequiredSystemLibraries)
+
+set(CPACK_PACKAGE_VENDOR "Artyom Tetyukhin")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "")
 set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 

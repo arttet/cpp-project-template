@@ -19,6 +19,6 @@ add_test(
 
 install(
   TARGETS ${PROJECT_NAME}
-  DESTINATION test
-  COMPONENT test
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT Testing
 )
