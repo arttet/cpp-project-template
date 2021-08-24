@@ -42,7 +42,7 @@ jobs:
         config:
           # Specific config
           - {
-              name: Linters Clang 12 x86 64,
+              name: Clang-Tidy LWYU Clang 12 x86 64,
               compiler: clang,
               version: 12,
               cc: clang-12,
@@ -50,8 +50,21 @@ jobs:
               arch: x86_64,
               build_type: Debug,
               clang-tidy: clang-tidy-12,
-              iwyu: '/usr/local/bin/include-what-you-use',
               lwyu: 'True',
+            }
+
+          - {
+              name: CppCheck CppLint IWYU Apple Clang 12 x86 64,
+              compiler: apple-clang,
+              version: '12.0',
+              cc: clang,
+              cxx: clang++,
+              arch: x86_64,
+              build_type: Debug,
+              test: True,
+              cppcheck: cppcheck,
+              cpplint: cpplint,
+              iwyu: 'include-what-you-use',
             }
 
           - {
@@ -158,7 +171,7 @@ jobs:
               arch: x86_64,
               build_type: Debug,
               toolset: v142,
-              runtime: MTd,
+              runtime: MDd,
               test: True,
             }
           - {
@@ -171,7 +184,7 @@ jobs:
               arch: x86_64,
               build_type: RelWithDebInfo,
               toolset: v142,
-              runtime: MT,
+              runtime: MD,
               test: True,
             }
 
@@ -185,7 +198,7 @@ jobs:
               arch: armv8,
               build_type: Debug,
               toolset: v142,
-              runtime: MTd,
+              runtime: MDd,
             }
           - {
               # FIXME: Update Conan settings.yml
@@ -197,7 +210,7 @@ jobs:
               arch: armv8,
               build_type: RelWithDebInfo,
               toolset: v142,
-              runtime: MT,
+              runtime: MD,
             }
 
           - {
@@ -209,7 +222,7 @@ jobs:
               arch: x86_64,
               build_type: Debug,
               toolset: ClangCL,
-              runtime: MTd,
+              runtime: MDd,
               test: True,
             }
           - {
@@ -221,7 +234,7 @@ jobs:
               arch: x86_64,
               build_type: RelWithDebInfo,
               toolset: ClangCL,
-              runtime: MT,
+              runtime: MD,
               test: True,
             }
 
@@ -229,12 +242,13 @@ jobs:
               name: Windows Clang 12 x86 64 Debug,
               compiler: clang,
               version: 12,
-              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
-              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang++',
               arch: x86_64,
               build_type: Debug,
               runtime: MDd,
               test: True,
+              generator: Ninja,
               # FIXME:
               cxxflags: '-Wno-unused-command-line-argument -Wno-microsoft-enum-value',
             }
@@ -242,12 +256,13 @@ jobs:
               name: Windows Clang 12 x86 64 RelWithDebInfo,
               compiler: clang,
               version: 12,
-              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
-              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang++',
               arch: x86_64,
               build_type: RelWithDebInfo,
               runtime: MD,
               test: True,
+              generator: Ninja,
               # FIXME:
               cxxflags: '-Wno-unused-command-line-argument -Wno-microsoft-enum-value',
             }
@@ -256,11 +271,12 @@ jobs:
               name: Windows Clang 12 ARM v8 Debug,
               compiler: clang,
               version: 12,
-              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
-              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang++',
               arch: armv8,
               build_type: Debug,
               runtime: MDd,
+              generator: Ninja,
               # FIXME:
               cxxflags: '-Wno-unused-command-line-argument',
             }
@@ -268,11 +284,12 @@ jobs:
               name: Windows Clang 12 ARM v8 RelWithDebInfo,
               compiler: clang,
               version: 12,
-              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang',
-              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/bin/clang++',
+              cc: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang',
+              cxx: 'C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin/clang++',
               arch: armv8,
               build_type: RelWithDebInfo,
               runtime: MD,
+              generator: Ninja,
               # FIXME:
               cxxflags: '-Wno-unused-command-line-argument',
             }
@@ -404,8 +421,8 @@ jobs:
           -g cmake \
           -if ${{ env.build-folder }} \
           -b outdated \
-          -s arch_target=${{ matrix.config.arch }} \
           -s build_type=${{ matrix.config.build_type }} \
+          -s arch_target=${{ matrix.config.arch }} \
           -s compiler.cppstd=${{ env.cppstd }} \
           -s compiler.version=${{ matrix.config.version }} "
 
@@ -451,24 +468,36 @@ jobs:
             install+="-e CXXFLAGS=-fsanitize=${{ matrix.config.sanitize }} "
           fi
 
+          if [[ ! -z "${{ matrix.config.generator }}" ]]; then
+            install+="-e CONAN_CMAKE_GENERATOR=${{ matrix.config.generator }} "
+          fi
+
           if [[ ! -z "${{ matrix.config.coverage }}" ]]; then
-            install+="-o with_coverage=True "
+            install+="-o coverage=True "
           fi
 
           if [[ ! -z "${{ matrix.config.test }}" ]]; then
-            install+="-o with_tests=True "
+            install+="-o tests=True "
           fi
 
           if [[ ! -z "${{ matrix.config.clang-tidy }}" ]]; then
-            install+="-o with_clang_tidy=${{ matrix.config.clang-tidy }} "
+            install+="-o clang_tidy=${{ matrix.config.clang-tidy }} "
+          fi
+
+          if [[ ! -z "${{ matrix.config.cppcheck }}" ]]; then
+            install+="-o cppcheck=${{ matrix.config.cppcheck }} "
+          fi
+
+          if [[ ! -z "${{ matrix.config.cpplint }}" ]]; then
+            install+="-o cpplint=${{ matrix.config.cpplint }} "
           fi
 
           if [[ ! -z "${{ matrix.config.iwyu }}" ]]; then
-            install+="-o with_iwyu=${{ matrix.config.iwyu }} "
+            install+="-o iwyu=${{ matrix.config.iwyu }} "
           fi
 
           if [[ ! -z "${{ matrix.config.lwyu }}" ]]; then
-            install+="-o with_lwyu=${{ matrix.config.lwyu }} "
+            install+="-o lwyu=True "
           fi
 
           build="# conan build . -bf ${{ env.build-folder }}"
@@ -498,7 +527,8 @@ jobs:
         config:
           - { name: Windows MSVC 2019 x86 64 Debug ClangCL, os: windows-latest, build_type: Debug }
           - { name: Windows Clang 12 x86 64 Debug, os: windows-latest, build_type: Debug }
-          - { name: Linters Clang 12 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: Clang-Tidy LWYU Clang 12 x86 64, os: ubuntu-latest, build_type: Debug }
+          - { name: CppCheck CppLint IWYU Apple Clang 12 x86 64, os: macos-latest, build_type: Debug }
           - { name: Address Sanitizer GCC 10 x86 64, os: ubuntu-latest, build_type: Debug }
           - { name: Address Sanitizer Clang 12 x86 64, os: ubuntu-latest, build_type: Debug }
           - { name: Thread Sanitizer GCC 10 x86 64, os: ubuntu-latest, build_type: Debug }
@@ -516,11 +546,7 @@ jobs:
 
       - name: Install requirements
         shell: bash
-        run: |
-          python -m pip install --upgrade pip conan
-          if [[ "${{ matrix.config.name }}" == "Linters"* ]]; then
-            sudo ./.github/include-what-you-use.sh
-          fi
+        run: python -m pip install --upgrade pip conan
 
       - name: Download the build script
         uses: actions/download-artifact@v2
@@ -544,6 +570,7 @@ jobs:
     needs: [clang-format, generate]
     if: github.ref == 'refs/heads/main' || github.event_name == 'pull_request'
     strategy:
+      fail-fast: false
       matrix:
         config:
           # Windows

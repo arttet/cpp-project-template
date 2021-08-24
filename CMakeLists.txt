@@ -4,12 +4,30 @@ project(cpp-project-template VERSION 0.0.1 LANGUAGES CXX)
 
 ############################################################################################
 
+# Conan
+
 if (EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
   include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
   conan_basic_setup()
 endif ()
 
 ############################################################################################
+
+# Options
+
+set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
+set(WITH_DOC OFF CACHE BOOL "Build documentations")
+set(WITH_TESTS OFF CACHE BOOL "Build test suites")
+
+include(CMakePrintHelpers)
+
+cmake_print_variables(WITH_COVERAGE)
+cmake_print_variables(WITH_DOC)
+cmake_print_variables(WITH_TESTS)
+
+############################################################################################
+
+# CMake Options
 
 # Set required C++ Standard
 set(CMAKE_CXX_STANDARD 17)
@@ -26,41 +44,75 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH OFF)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
 
 # Configure the visibility of symbols in targets
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
+# set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+# set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
 if (NOT DEFINED CMAKE_DEBUG_POSTFIX)
   set(CMAKE_DEBUG_POSTFIX "d")
 endif()
-
-include(CMakePrintHelpers)
 
 # Build types
 cmake_print_variables(CMAKE_CONFIGURATION_TYPES)
 cmake_print_variables(CMAKE_BUILD_TYPE)
 cmake_print_variables(BUILD_SHARED_LIBS)
 
-# Linters
+# Verbose output
+cmake_print_variables(CMAKE_VERBOSE_MAKEFILE)
+
+############################################################################################
+
+# Linter Options
+
+if (CMAKE_CXX_CLANG_TIDY)
+  list(APPEND CMAKE_CXX_CLANG_TIDY
+    "-format-style='file'"
+  )
+endif()
+
+if (CMAKE_CXX_CPPCHECK)
+  list(APPEND CMAKE_CXX_CPPCHECK
+    "--std=c++17"
+    "--enable=warning,performance,portability,information,missingInclude"
+    "--inconclusive"
+    "--force"
+    "--inline-suppr"
+    "--suppressions-list=${CMAKE_SOURCE_DIR}/.cppcheck-suppressions"
+  )
+endif()
+
+if (CMAKE_CXX_CPPLINT)
+  list(APPEND CMAKE_CXX_CPPLINT
+    "--linelength=120"
+    "--recursive"
+  )
+endif()
+
+# if (CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
+#   list(APPEND CMAKE_CXX_INCLUDE_WHAT_YOU_USE
+#     "-Xiwyu"
+#     "--verbose=3"
+#   )
+# endif()
+
+if (WITH_COVERAGE)
+  add_compile_options(
+    "--coverage"
+  )
+
+  add_link_options(
+    "--coverage"
+  )
+endif()
+
 cmake_print_variables(CMAKE_CXX_CLANG_TIDY)
 cmake_print_variables(CMAKE_CXX_CPPCHECK)
 cmake_print_variables(CMAKE_CXX_CPPLINT)
 cmake_print_variables(CMAKE_CXX_INCLUDE_WHAT_YOU_USE)
 cmake_print_variables(CMAKE_LINK_WHAT_YOU_USE)
 
-# Verbose output
-cmake_print_variables(CMAKE_VERBOSE_MAKEFILE)
-
 ############################################################################################
 
-set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
-set(WITH_DOC OFF CACHE BOOL "Build documentations")
-set(WITH_TESTS OFF CACHE BOOL "Build test suites")
-
-cmake_print_variables(WITH_COVERAGE)
-cmake_print_variables(WITH_DOC)
-cmake_print_variables(WITH_TESTS)
-
-############################################################################################
+# Compiler Options
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   # https://clang.llvm.org/docs/ClangCommandLineReference.html
@@ -115,23 +167,7 @@ endif()
 
 ############################################################################################
 
-if (CMAKE_CXX_CLANG_TIDY)
-  list(APPEND CMAKE_CXX_CLANG_TIDY
-    "-format-style='file'"
-  )
-endif()
-
-if (WITH_COVERAGE)
-  add_compile_options(
-    "--coverage"
-  )
-
-  add_link_options(
-    "--coverage"
-  )
-endif()
-
-############################################################################################
+# Requirements & Build Requirements
 
 find_package(fmt REQUIRED)
 find_package(Microsoft.GSL REQUIRED)

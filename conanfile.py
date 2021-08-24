@@ -18,28 +18,32 @@ class UtilsConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
 
-        "with_clang_tidy": "ANY",
-        "with_cppcheck": "ANY",
-        "with_cpplint": "ANY",
-        "with_iwyu": "ANY",
-        "with_lwyu": [True, False],
+        "system_requirements": [True, False],
 
-        "with_coverage": [True, False],
-        "with_tests": [True, False],
+        "clang_tidy": "ANY",
+        "cppcheck": "ANY",
+        "cpplint": "ANY",
+        "iwyu": "ANY",
+        "lwyu": [True, False],
+
+        "coverage": [True, False],
+        "tests": [True, False],
     }
 
     default_options = {
         "shared": False,
         "fPIC": True,
 
-        "with_clang_tidy": "",
-        "with_cppcheck": "",
-        "with_cpplint": "",
-        "with_iwyu": "",
-        "with_lwyu": False,
+        "system_requirements": True,
 
-        "with_coverage": False,
-        "with_tests": False,
+        "clang_tidy": "",
+        "cppcheck": "",
+        "cpplint": "",
+        "iwyu": "",
+        "lwyu": False,
+
+        "coverage": False,
+        "tests": False,
     }
 
     generators = "cmake", "cmake_find_package"
@@ -60,7 +64,7 @@ class UtilsConan(ConanFile):
         pass
 
     def build_requirements(self):
-        if self.options.with_tests:
+        if self.options.tests:
             self.build_requires("benchmark/1.5.6", force_host_context=True)
             self.build_requires("gtest/1.11.0", force_host_context=True)
 
@@ -68,12 +72,24 @@ class UtilsConan(ConanFile):
         pass
 
     def system_requirements(self):
+        if not self.options.system_requirements:
+            return
+
         packages = []
+        if self.options.clang_tidy:
+            packages.append(
+                "llvm" if os_info.is_windows else f"{self.options.clang_tidy}")
 
-        if self.options.with_clang_tidy != "" and os_info.is_linux:
-            packages.append(self.options.with_clang_tidy)
+        if self.options.cppcheck:
+            packages.append("cppcheck")
 
-        if self.options.with_coverage and os_info.is_linux:
+        if self.options.cpplint:
+            packages.append("cpplint")
+
+        if self.options.iwyu:
+            packages.append("include-what-you-use")
+
+        if self.options.coverage:
             packages.append("lcov")
 
         if os_info.is_windows:
@@ -82,7 +98,7 @@ class UtilsConan(ConanFile):
             installer = SystemPackageTool()
 
         if packages:
-            installer.install(packages)
+            installer.install_packages(packages)
 
     def source(self):
         pass
@@ -97,14 +113,14 @@ class UtilsConan(ConanFile):
         # cmake.msbuild_verbosity = "normal"
         # cmake.verbose = True
 
-        cmake.definitions["CMAKE_CXX_CLANG_TIDY"] = self.options.with_clang_tidy
-        cmake.definitions["CMAKE_CXX_CPPCHECK"] = self.options.with_cppcheck
-        cmake.definitions["CMAKE_CXX_CPPLINT"] = self.options.with_cpplint
-        cmake.definitions["CMAKE_CXX_INCLUDE_WHAT_YOU_USE"] = self.options.with_iwyu
-        cmake.definitions["CMAKE_LINK_WHAT_YOU_USE"] = self.options.with_lwyu
+        cmake.definitions["CMAKE_CXX_CLANG_TIDY"] = self.options.clang_tidy
+        cmake.definitions["CMAKE_CXX_CPPCHECK"] = self.options.cppcheck
+        cmake.definitions["CMAKE_CXX_CPPLINT"] = self.options.cpplint
+        cmake.definitions["CMAKE_CXX_INCLUDE_WHAT_YOU_USE"] = self.options.iwyu
+        cmake.definitions["CMAKE_LINK_WHAT_YOU_USE"] = self.options.lwyu
 
-        cmake.definitions["WITH_COVERAGE"] = self.options.with_coverage
-        cmake.definitions["WITH_TESTS"] = self.options.with_tests
+        cmake.definitions["WITH_COVERAGE"] = self.options.coverage
+        cmake.definitions["WITH_TESTS"] = self.options.tests
 
         cmake.configure()
         cmake.build()
