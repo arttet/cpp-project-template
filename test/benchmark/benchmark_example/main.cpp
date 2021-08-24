@@ -3,7 +3,7 @@
 void BM_StringCreation(benchmark::State & state)
 {
     while (state.KeepRunning()) {
-        std::string empty_string;
+        std::string const empty_string;
     }
 }
 
