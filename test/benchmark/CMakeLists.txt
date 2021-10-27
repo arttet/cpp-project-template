@@ -1,1 +1,1 @@
-add_subdirectory(benchmark_example)
+add_subdirectory(benchmark_template)
