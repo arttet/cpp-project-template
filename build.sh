@@ -2,29 +2,22 @@
 
 set -euo pipefail
 
-# # ClangCL
-# conan install . -g cmake -if build -b outdated \
-#     -s build_type=Debug -s arch_target=x86_64 -s compiler.cppstd=17 \
-#     -s compiler.version=16 -s compiler="Visual Studio" -s compiler.runtime=MTd -s compiler.toolset=ClangCL \
-#     -e CC=clang-cl -e CXX=clang-cl \
-#     -o tests=True
+export Compiler=clang
+export Version=13
 
-# Clang
-conan install . -g cmake -if build -b outdated \
-    -s build_type=Debug -s arch_target=x86_64 -s compiler.cppstd=17 \
-    -s compiler.version=12 -s compiler=clang \
-    -e CC=clang -e CXX=clang++ -e CONAN_CMAKE_GENERATOR=Ninja \
-    -e CXXFLAGS="-Wno-unused-command-line-argument -Wno-microsoft-enum-value" \
-    -o tests=True \
-    # -o system_requirements=False \
-    # -o clang_tidy="clang-tidy" \
-    # -o cppcheck=cppcheck \
-    # -o cpplint=cpplint \
+# export Compiler="Visual Studio"
 
-# # Visual Studio
-# conan install . -g cmake -if build -b outdated \
-#     -s build_type=Debug -s arch_target=x86_64 -s compiler.cppstd=17 \
-#     -s compiler.version=16 -s compiler="Visual Studio" -s compiler.runtime=MTd -s compiler.toolset=v142 \
-#     -o tests=True
+export Arch=x86_64
+export BuildType=Release
+# export Toolset=ClangCL
+export Runtime=MT
+# export Sanitizer=ASan
+export Tests=True
+# export ClangTidy=clang-tidy
+
+conan install . -if build --build outdated \
+    -pr .conan/profiles/profile.jinja -pr:b .conan/profiles/profile.jinja \
+    -c tools.cmake.cmaketoolchain:generator=Ninja \
+    -e CONAN_CMAKE_GENERATOR=Ninja
 
 conan build . -bf build

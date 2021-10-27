@@ -15,7 +15,6 @@
                 "moduleLoad": false,
                 "trace": true
             },
-            // "visualizerFile": "${workspaceFolder}/my.natvis",
             "showDisplayString": true
         }
     ]

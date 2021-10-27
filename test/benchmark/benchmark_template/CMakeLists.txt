@@ -1,4 +1,4 @@
-project(benchmark_example)
+project(benchmark_template)
 
 add_executable(${PROJECT_NAME})
 

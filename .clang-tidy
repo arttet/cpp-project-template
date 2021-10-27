@@ -1,6 +1,7 @@
 ### https://clang.llvm.org/extra/clang-tidy/
 ---
 Checks: '*,
+-clang-diagnostic-unused-command-line-argument,
 -bugprone-exception-escape,
 -cppcoreguidelines-avoid-c-arrays,
 -cppcoreguidelines-avoid-magic-numbers,

@@ -1,0 +1,139 @@
+name: linters
+
+on:
+  push:
+  pull_request:
+  schedule:
+    # https://crontab.guru/
+    # At 12:00 AM, only on Monday
+    - cron: 0 0 * * 1
+
+env:
+  build-folder: build
+  python-version: 3.9
+
+jobs:
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+      - name: Set clang-format-12
+        run: |
+          sudo update-alternatives --remove-all clang-format
+          sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-12 100
+      - name: Style
+        run: |
+          linter_errors=$(git-clang-format-12 --commit "HEAD~1" --style file --diff -q || true)
+          echo "$linter_errors"
+          if [ ! -z "$linter_errors" ]; then echo "Detected formatting issues; please fix"; exit 1; else echo "Formatting is correct"; exit 0; fi
+
+  linters:
+    name: ${{ matrix.config.name }}
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix:
+        config:
+          - name: Ubuntu Clang-Tidy LWYU Clang 12 x86 64 Debug
+            os: ubuntu-latest
+            compiler: gcc
+            arch: x86_64
+            build_type: Debug
+            clang_tidy: clang-tidy-12
+            lwyu: 'True'
+
+          - name: OS X CppCheck CppLint IWYU Apple Clang 12 x86 64
+            os: macos-latest
+            compiler: apple-clang
+            arch: x86_64
+            build_type: Debug
+            cppcheck: cppcheck
+            cpplint: cpplint
+            iwyu: include-what-you-use
+
+          - name: Ubuntu Address Sanitizer GCC x86 64 Debug
+            os: ubuntu-latest
+            compiler: gcc
+            arch: x86_64
+            build_type: Debug
+            sanitizer: ASan
+
+          - name: Ubuntu Address Sanitizer Clang x86 64 Debug
+            os: ubuntu-latest
+            compiler: clang
+            arch: x86_64
+            build_type: Debug
+            sanitizer: ASan
+
+          - name: Ubuntu Thread Sanitizer GCC x86 64 Debug
+            os: ubuntu-latest
+            compiler: gcc
+            arch: x86_64
+            build_type: Debug
+            sanitizer: TSan
+
+          - name: Ubuntu Thread Sanitizer Clang x86 64 Debug
+            os: ubuntu-latest
+            compiler: clang
+            arch: x86_64
+            build_type: Debug
+            sanitizer: TSan
+
+          - name: Ubuntu Undefined Behavior Sanitizer GCC x86 64 Debug
+            os: ubuntu-latest
+            compiler: gcc
+            arch: x86_64
+            build_type: Debug
+            sanitizer: UBSan
+
+          - name: Ubuntu Undefined Behavior Sanitizer Clang x86 64 Debug
+            os: ubuntu-latest
+            compiler: clang
+            arch: x86_64
+            build_type: Debug
+            sanitizer: UBSan
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Python ${{ env.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.python-version }}
+
+      - name: Install requirements
+        run: python -m pip install --upgrade pip conan
+
+      - name: Install dependencies
+        run: conan install . -if ${{ env.build-folder }} --build outdated
+          -o system_requirements=True
+          -pr .conan/profiles/profile.jinja -pr:b .conan/profiles/profile.jinja
+        env:
+          Compiler: ${{ matrix.config.compiler }}
+          Version: ${{ matrix.config.version }}
+          Arch: ${{ matrix.config.arch }}
+          BuildType: ${{ matrix.config.build_type }}
+          Toolset: ${{ matrix.config.toolset }}
+          Runtime: ${{ matrix.config.runtime }}
+          Sanitizer: ${{ matrix.config.sanitizer }}
+          ClangTidy: ${{ matrix.config.clang_tidy }}
+          CppCheck: ${{ matrix.config.cppcheck }}
+          CppLint: ${{ matrix.config.cpplint }}
+          IncludeWhatYouUse: ${{ matrix.config.iwyu }}
+          LinkWhatYouUse: ${{ matrix.config.lwyu }}
+          Tests: 'True'
+
+      - name: Build
+        run: conan build . -bf ${{ env.build-folder }}
+
+      - name: Test
+        run: ctest -C ${{ matrix.config.build_type }}
+          --output-on-failure
+          --repeat-until-fail 5
+          --test-dir ${{ env.build-folder }}
+          --output-junit report.xml
+          --timeout 120

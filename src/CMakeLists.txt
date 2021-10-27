@@ -1,4 +1,4 @@
-project(executable)
+project(project-template)
 
 add_executable(${PROJECT_NAME})
 
@@ -12,11 +12,11 @@ target_link_libraries(${PROJECT_NAME}
     fmt::fmt
     Microsoft.GSL::GSL
 
-   cpp-project-template::include
+    cpp-project-template::include
 )
 
 add_test(
-  NAME system_${PROJECT_NAME}
+  NAME ${PROJECT_NAME}
   COMMAND ${PROJECT_NAME}
 )
 

@@ -4,24 +4,17 @@ project(cpp-project-template VERSION 0.0.1 LANGUAGES CXX)
 
 ############################################################################################
 
-# Conan
-
-if (EXISTS "${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
-  include("${CMAKE_BINARY_DIR}/conanbuildinfo.cmake")
-  conan_basic_setup()
-endif ()
-
-############################################################################################
-
 # Options
+include(CMakePackageConfigHelpers)
+include(CMakePrintHelpers)
+include(GNUInstallDirs)
+include(InstallRequiredSystemLibraries)
 
-set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
+# set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
 set(WITH_DOC OFF CACHE BOOL "Build documentations")
 set(WITH_TESTS OFF CACHE BOOL "Build test suites")
 
-include(CMakePrintHelpers)
-
-cmake_print_variables(WITH_COVERAGE)
+# cmake_print_variables(WITH_COVERAGE)
 cmake_print_variables(WITH_DOC)
 cmake_print_variables(WITH_TESTS)
 
@@ -37,6 +30,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Generate the compile_commands.json file
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_INCLUDE_HEADERS_IN_COMPILE_COMMANDS ON)
+set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
 
 # Set the Relative Path Configurations
 set(CMAKE_SKIP_BUILD_RPATH OFF)
@@ -94,16 +88,6 @@ endif()
 #   )
 # endif()
 
-if (WITH_COVERAGE)
-  add_compile_options(
-    "--coverage"
-  )
-
-  add_link_options(
-    "--coverage"
-  )
-endif()
-
 cmake_print_variables(CMAKE_CXX_CLANG_TIDY)
 cmake_print_variables(CMAKE_CXX_CPPCHECK)
 cmake_print_variables(CMAKE_CXX_CPPLINT)
@@ -130,9 +114,6 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     # Using clang with clang-cl front end
   elseif (CMAKE_CXX_COMPILER_FRONTEND_VARIANT STREQUAL "GNU")
     # Using clang with regular front end
-    add_compile_options(
-      "-Werror"
-    )
   endif()
 elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   # https://gcc.gnu.org/onlinedocs/gcc/Option-Summary.html
@@ -161,7 +142,7 @@ elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
     # Enable parallel compilation (https://docs.microsoft.com/en-us/cpp/build/reference/mp-build-with-multiple-processes?view=msvc-160)
     "/MP"
     # Flag for catch the null pointer exception (https://docs.microsoft.com/en-us/cpp/build/reference/eh-exception-handling-model?view=msvc-160)
-    "/EHa"
+    "/EHs"
   )
 endif()
 
@@ -226,13 +207,7 @@ set_folders(${CMAKE_CURRENT_SOURCE_DIR})
 
 install(FILES LICENSE DESTINATION licenses)
 
-set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS ON)
-
-include(GNUInstallDirs)
-include(CMakePackageConfigHelpers)
-include(InstallRequiredSystemLibraries)
-
-set(CPACK_PACKAGE_VENDOR "Artyom Tetyukhin")
+set(CPACK_PACKAGE_VENDOR "")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "")
 set(CPACK_PACKAGE_FILE_NAME "${CMAKE_PROJECT_NAME}-${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 
