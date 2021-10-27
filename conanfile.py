@@ -57,7 +57,7 @@ class ProjectTemplateConan(ConanFile):
 
     def build_requirements(self):
         if self.options.tests:
-            self.build_requires("benchmark/1.5.6", force_host_context=True)
+            self.build_requires("benchmark/1.6.0", force_host_context=True)
             self.build_requires("gtest/1.11.0", force_host_context=True)
 
     def system_requirements(self):
