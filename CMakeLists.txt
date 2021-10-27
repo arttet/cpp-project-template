@@ -10,11 +10,9 @@ include(CMakePrintHelpers)
 include(GNUInstallDirs)
 include(InstallRequiredSystemLibraries)
 
-# set(WITH_COVERAGE OFF CACHE BOOL "Enable coverage reporting")
 set(WITH_DOC OFF CACHE BOOL "Build documentations")
 set(WITH_TESTS OFF CACHE BOOL "Build test suites")
 
-# cmake_print_variables(WITH_COVERAGE)
 cmake_print_variables(WITH_DOC)
 cmake_print_variables(WITH_TESTS)
 

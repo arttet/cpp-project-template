@@ -107,7 +107,7 @@ class ProjectTemplateConan(ConanFile):
 
         # https://docs.microsoft.com/en-us/visualstudio/msbuild/msbuild-command-line-reference?view=vs-2019
         # cmake.msbuild_verbosity = "normal"
-        cmake.verbose = True
+        # cmake.verbose = True
 
         cmake.configure()
         cmake.build()
