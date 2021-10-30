@@ -12,7 +12,8 @@ target_link_libraries(${PROJECT_NAME}
     fmt::fmt
     Microsoft.GSL::GSL
 
-    cpp-project-template::include
+    ${CMAKE_PROJECT_NAME}::include
+    ${CMAKE_PROJECT_NAME}::lib-template
 )
 
 add_test(

@@ -5,7 +5,7 @@ add_library(${CMAKE_PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
   PRIVATE
-    cpp-project-template/error/disable_warning.h
+    ${PROJECT_NAME}/error/disable_warning.h
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -15,8 +15,8 @@ target_include_directories(${PROJECT_NAME}
 )
 
 install(
-  DIRECTORY ${CMAKE_PROJECT_NAME}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  DIRECTORY ${PROJECT_NAME}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${CMAKE_PROJECT_NAME}
   COMPONENT Development
 )
 

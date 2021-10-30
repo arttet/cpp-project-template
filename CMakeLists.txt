@@ -161,6 +161,7 @@ endif()
 enable_testing()
 
 add_subdirectory(include)
+add_subdirectory(lib)
 add_subdirectory(src)
 
 if (WITH_TESTS)

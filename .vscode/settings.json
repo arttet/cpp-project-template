@@ -1,0 +1,8 @@
+{
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.loggingLevel": "info",
+
+    "cmake.configureSettings": {
+        "CMAKE_TOOLCHAIN_FILE": "${command:cmake.buildDirectory}/conan_toolchain.cmake",
+    },
+}

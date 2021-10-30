@@ -32,3 +32,6 @@
 *.app
 
 build
+
+.vscode/c_cpp_properties.json
+CMakeUserPresets.json

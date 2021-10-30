@@ -1,6 +1,5 @@
 #pragma once
 
-
 #if defined(__GNUC__)
 
 #define DO_PRAGMA(X)                  _Pragma(#X)
