@@ -8,8 +8,8 @@ include(default)
 {% set version = os.getenv("Version") or "12" %}
 {% elif compiler == 'gcc' %}
 {% set version = os.getenv("Version") or "10" %}
-{% elif compiler == 'Visual Studio' %}
-{% set version = os.getenv("Version") or "16" %}
+{% elif compiler == 'msvc' %}
+{% set version = os.getenv("Version") or "19.29" %}
 {% endif %}
 
 {% set arch_target = os.getenv("Arch") or "x86_64" %}
@@ -25,10 +25,12 @@ include(default)
 {% set lwyu = os.getenv("LinkWhatYouUse") or False %}
 
 {% if platform.system() == "Windows" %}
-{% set toolset = os.getenv("Toolset") or "v142" %}
-{% set runtime = os.getenv("Runtime") or "MTd" %}
 
-{% if compiler == 'clang' %}
+{% if compiler == 'msvc' %}
+{% set runtime = os.getenv("Runtime") or "static" %}
+{% set runtime_type = os.getenv("RuntimeType") or "Debug" %}
+{% elif compiler == 'clang' %}
+{% set runtime = os.getenv("Runtime") or "MTd" %}
 {% set flags = '-Wno-unused-command-line-argument -Wno-microsoft-enum-value' %}
 {% endif %}
 
@@ -44,16 +46,16 @@ compiler.cppstd=17
 
 {% if compiler == 'apple-clang' %}
 compiler.libcxx=libc++
-{% elif compiler != 'Visual Studio' %}
+{% elif compiler != 'msvc' %}
 compiler.libcxx=libstdc++11
 {% endif %}
 
 {% if platform.system() == "Windows" %}
 {% if compiler == 'clang' %}
 compiler.runtime={{ runtime }}
-{% elif compiler == 'Visual Studio' %}
-compiler.toolset={{ toolset }}
+{% elif compiler == 'msvc' %}
 compiler.runtime={{ runtime }}
+compiler.runtime_type={{ runtime_type }}
 {% endif %}
 {% endif %}
 
@@ -96,7 +98,7 @@ CXXFLAGS=-fsanitize=undefined {{ flags }}
 {% elif coverage %}
 CFLAGS=--coverage {{ flags }}
 CXXFLAGS=--coverage {{ flags }}
-{% else %}
+{% elif compiler != 'msvc' %}
 CFLAGS={{ flags }}
 CXXFLAGS={{ flags }}
 {% endif %}

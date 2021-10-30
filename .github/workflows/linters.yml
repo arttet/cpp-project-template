@@ -54,6 +54,24 @@ jobs:
             cpplint: cpplint
             iwyu: include-what-you-use
 
+          - name: Windows Address Sanitizer MSVC 19.29 x86 64 Debug Static
+            os: windows-latest
+            compiler: msvc
+            arch: x86_64
+            build_type: Debug
+            runtime: static
+            runtime_type: Debug
+            sanitizer: ASan
+
+          - name: Windows Address Sanitizer Clang 12 x86 64 RelWithDebInfo MT
+            os: windows-latest
+            compiler: clang
+            version: 13
+            arch: x86_64
+            build_type: RelWithDebInfo
+            runtime: MT
+            sanitizer: ASan
+
           - name: Ubuntu Address Sanitizer GCC x86 64 Debug
             os: ubuntu-latest
             compiler: gcc
@@ -119,6 +137,7 @@ jobs:
           BuildType: ${{ matrix.config.build_type }}
           Toolset: ${{ matrix.config.toolset }}
           Runtime: ${{ matrix.config.runtime }}
+          RuntimeType: ${{ matrix.config.runtime_type }}
           Sanitizer: ${{ matrix.config.sanitizer }}
           ClangTidy: ${{ matrix.config.clang_tidy }}
           CppCheck: ${{ matrix.config.cppcheck }}

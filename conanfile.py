@@ -1,4 +1,4 @@
-from conan.tools.cmake import CMake, CMakeToolchain
+from conan.tools.cmake import CMake, CMakeToolchain, CMakeDeps
 from conans import ConanFile
 from conans.tools import ChocolateyTool, SystemPackageTool, os_info
 
@@ -57,8 +57,8 @@ class ProjectTemplateConan(ConanFile):
 
     def build_requirements(self):
         if self.options.tests:
-            self.build_requires("benchmark/1.6.0", force_host_context=True)
-            self.build_requires("gtest/1.11.0", force_host_context=True)
+            self.build_requires("benchmark/1.6.0")
+            self.build_requires("gtest/1.11.0")
 
     def system_requirements(self):
         if not self.options.system_requirements:
@@ -101,6 +101,15 @@ class ProjectTemplateConan(ConanFile):
         tc.variables["WITH_TESTS"] = self.options.tests
 
         tc.generate()
+
+        build_requirements = []
+        if self.options.tests:
+            build_requirements.append("benchmark")
+            build_requirements.append("gtest")
+
+        cmake = CMakeDeps(self)
+        cmake.build_context_activated = build_requirements
+        cmake.generate()
 
     def build(self):
         cmake = CMake(self)

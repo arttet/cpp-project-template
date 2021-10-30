@@ -19,65 +19,37 @@ jobs:
     strategy:
       matrix:
         config:
-          - name: Windows MSVC 19.29 x86 64 Debug MTd
+          - name: Windows MSVC 19.29 x86 64 Debug Static
             os: windows-latest
-            compiler: Visual Studio
+            compiler: msvc
             arch: x86_64
             build_type: Debug
-            runtime: MTd
+            runtime: static
+            runtime_type: Debug
 
-          - name: Windows MSVC 19.29 x86 64 RelWithDebInfo MT
+          - name: Windows MSVC 19.29 x86 64 RelWithDebInfo Static
             os: windows-latest
-            compiler: Visual Studio
+            compiler: msvc
             arch: x86_64
             build_type: RelWithDebInfo
-            runtime: MT
+            runtime: static
+            runtime_type: Release
 
-          - name: Windows MSVC ClangCL x86 64 Debug MTd
+          - name: Windows MSVC 19.29 ARM v8 Debug Dynamic
             os: windows-latest
-            compiler: Visual Studio
-            arch: x86_64
-            build_type: Debug
-            toolset: ClangCL
-            runtime: MTd
-
-          - name: Windows MSVC ClangCL x86 64 RelWithDebInfo MT
-            os: windows-latest
-            compiler: Visual Studio
-            arch: x86_64
-            build_type: RelWithDebInfo
-            toolset: ClangCL
-            runtime: MT
-
-          - name: Windows MSVC 19.29 ARM v8 Debug MTd
-            os: windows-latest
-            compiler: Visual Studio
+            compiler: msvc
             arch: armv8
             build_type: Debug
-            runtime: MTd
+            runtime: dynamic
+            runtime_type: Debug
 
-          - name: Windows MSVC 19.29 ARM v8 RelWithDebInfo MT
+          - name: Windows MSVC 19.29 ARM v8 RelWithDebInfo Dynamic
             os: windows-latest
-            compiler: Visual Studio
+            compiler: msvc
             arch: armv8
             build_type: RelWithDebInfo
-            runtime: MT
-
-          - name: Windows MSVC ClangCL ARM v8 Debug MTd
-            os: windows-latest
-            compiler: Visual Studio
-            arch: armv8
-            build_type: Debug
-            toolset: ClangCL
-            runtime: MTd
-
-          - name: Windows MSVC ClangCL ARM v8 RelWithDebInfo MT
-            os: windows-latest
-            compiler: Visual Studio
-            arch: armv8
-            build_type: RelWithDebInfo
-            toolset: ClangCL
-            runtime: MT
+            runtime: dynamic
+            runtime_type: Release
 
           - name: Windows Clang 12 x86 64 Debug MTd
             os: windows-latest
@@ -205,6 +177,7 @@ jobs:
           BuildType: ${{ matrix.config.build_type }}
           Toolset: ${{ matrix.config.toolset }}
           Runtime: ${{ matrix.config.runtime }}
+          RuntimeType: ${{ matrix.config.runtime_type }}
           Tests: 'True'
 
       - name: Build
